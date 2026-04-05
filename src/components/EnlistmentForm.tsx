@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, FormEvent } from 'react';
+import { FormEvent, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Tone } from '@/domain/types';
 
@@ -24,7 +24,7 @@ export default function EnlistmentForm() {
       });
 
       if (!res.ok) {
-        const { error: msg } = await res.json();
+        const { error: msg } = (await res.json()) as { error?: string };
         throw new Error(msg ?? '알 수 없는 오류가 발생했습니다.');
       }
 
@@ -38,10 +38,10 @@ export default function EnlistmentForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-6">
       <div>
-        <label htmlFor="date" className="block text-sm font-medium">
-          입대일 (YYYY-MM-DD)
+        <label htmlFor="date" className="block text-sm font-medium text-slate-700">
+          입대일
         </label>
         <input
           id="date"
@@ -49,36 +49,46 @@ export default function EnlistmentForm() {
           required
           value={date}
           onChange={(e) => setDate(e.target.value)}
-          className="mt-1 block w-full rounded border px-3 py-2"
+          className="mt-2 block w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-sky-500 focus:ring-4 focus:ring-sky-100"
         />
       </div>
 
-      <div>
-        <span className="block text-sm font-medium">문체 선택</span>
-        <div className="mt-1 flex gap-4">
-          {(['nostalgic', 't_plus'] as Tone[]).map((t) => (
-            <label key={t} className="flex items-center gap-2">
+      <fieldset className="space-y-3">
+        <legend className="text-sm font-medium text-slate-700">문체 선택</legend>
+        <div className="grid gap-3 sm:grid-cols-2">
+          {([
+            { value: 'nostalgic', label: '추억 소환', description: '담백하고 감성적인 회상 톤' },
+            { value: 't_plus', label: 'T-Plus', description: '군대식 말맛을 살린 보고체 톤' },
+          ] as const).map((option) => (
+            <label
+              key={option.value}
+              className="flex cursor-pointer items-start gap-3 rounded-2xl border border-slate-200 bg-white p-4 transition hover:border-sky-300 hover:bg-sky-50"
+            >
               <input
                 type="radio"
                 name="tone"
-                value={t}
-                checked={tone === t}
-                onChange={() => setTone(t)}
+                value={option.value}
+                checked={tone === option.value}
+                onChange={() => setTone(option.value)}
+                className="mt-1"
               />
-              {t === 'nostalgic' ? '추억 소환' : '군대식'}
+              <span>
+                <span className="block font-medium text-slate-900">{option.label}</span>
+                <span className="block text-sm text-slate-500">{option.description}</span>
+              </span>
             </label>
           ))}
         </div>
-      </div>
+      </fieldset>
 
-      {error && <p className="text-red-500 text-sm">{error}</p>}
+      {error ? <p className="text-sm text-red-600">{error}</p> : null}
 
       <button
         type="submit"
         disabled={loading}
-        className="rounded bg-blue-600 px-6 py-2 text-white disabled:opacity-50"
+        className="inline-flex w-full items-center justify-center rounded-xl bg-sky-600 px-6 py-3 font-semibold text-white transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-60"
       >
-        {loading ? '분석 중…' : '입대곡 찾기'}
+        {loading ? '입대곡 계산 중...' : '입대곡 찾기'}
       </button>
     </form>
   );

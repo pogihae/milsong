@@ -1,10 +1,8 @@
 /**
- * scripts/seed.ts
- *
  * One-off seed script for loading initial song, chart, and broadcast data into Supabase.
  * Run with: npx tsx scripts/seed.ts
  *
- * This script must NEVER be imported by the runtime recommendation path.
+ * This script must never be imported by the runtime recommendation path.
  */
 
 import { createClient } from '@supabase/supabase-js';
@@ -20,19 +18,15 @@ if (!supabaseUrl || !serviceRoleKey) {
   process.exit(1);
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const supabase = createClient(supabaseUrl, serviceRoleKey);
 
 async function seed() {
-  console.log('Seeding database…');
+  console.log('Seeding database...');
 
   // TODO: Insert songs
-  // const { error: songsError } = await supabase.from('songs').insert([...]);
-
   // TODO: Insert chart entries
-  // const { error: chartsError } = await supabase.from('charts').insert([...]);
-
   // TODO: Insert broadcast wins
-  // const { error: bwError } = await supabase.from('broadcast_wins').insert([...]);
 
   console.log('Seed complete.');
 }
