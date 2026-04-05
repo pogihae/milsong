@@ -19,7 +19,7 @@ export default function Home() {
           </h1>
           <p className="mx-auto max-w-2xl text-base leading-relaxed text-slate-600 sm:mx-0 sm:text-lg">
             그때 그 시절, 부대에서 가장 많이 들려왔던 노래는 무엇일까요?
-            입대일과 선호하는 문체를 입력하면 가장 그럴듯한 입대곡 Top 3를 추천해 드립니다.
+            입대일만 입력하면 가장 그럴듯한 입대곡 Top 3를 추천해 드립니다.
           </p>
         </div>
 
