@@ -3,6 +3,7 @@
 import { FormEvent, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Tone } from '@/domain/types';
+import { TONE_OPTIONS } from '@/domain/constants';
 
 export default function EnlistmentForm() {
   const router = useRouter();
@@ -59,10 +60,7 @@ export default function EnlistmentForm() {
       <fieldset className="space-y-4">
         <legend className="text-sm font-semibold text-slate-700">문체 선택</legend>
         <div className="grid gap-4 sm:grid-cols-2">
-          {([
-            { value: 'nostalgic', label: '추억 소환', description: '담백하고 감성적인 회상 톤' },
-            { value: 't_plus', label: 'T-Plus', description: '군대식 말맛을 살린 보고체 톤' },
-          ] as const).map((option) => (
+          {TONE_OPTIONS.map((option) => (
             <label
               key={option.value}
               className={`group relative flex cursor-pointer items-start gap-4 rounded-2xl border p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg ${
