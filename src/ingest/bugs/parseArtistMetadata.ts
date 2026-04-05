@@ -16,11 +16,14 @@ function mapGroupType(rawType: string): GroupType {
 
 export interface BugsArtistMetadata {
   groupType: GroupType;
+  nationality: string | null;
 }
 
 export function parseBugsArtistMetadata(html: string): BugsArtistMetadata {
   const $ = load(html);
   const rows = $('table.info tr').toArray();
+  let groupType: GroupType = 'other';
+  let nationality: string | null = null;
 
   for (const rowElement of rows) {
     const row = $(rowElement);
@@ -28,9 +31,13 @@ export function parseBugsArtistMetadata(html: string): BugsArtistMetadata {
     const value = normalizeText(row.find('td').first().text());
 
     if (header === '유형') {
-      return { groupType: mapGroupType(value) };
+      groupType = mapGroupType(value);
+    }
+
+    if (header === '국적') {
+      nationality = value || null;
     }
   }
 
-  return { groupType: 'other' };
+  return { groupType, nationality };
 }

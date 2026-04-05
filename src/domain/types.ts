@@ -11,6 +11,7 @@ export interface Song {
   genre: Genre;
   groupType: GroupType;
   releaseDate: string | null; // YYYY-MM-DD
+  sourceArtistId?: string | null;
 }
 
 export interface ChartEntry {

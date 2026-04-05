@@ -11,7 +11,7 @@ export async function getSongsByIds(ids: string[]): Promise<Song[]> {
 
   const { data, error } = await supabase
     .from('songs')
-    .select('id, title, artist, genre, group_type, release_date')
+    .select('id, title, artist, genre, group_type, release_date, source_artist_id')
     .in('id', ids);
 
   if (error) throw new Error(`songRepository.getSongsByIds: ${error.message}`);
@@ -23,6 +23,7 @@ export async function getSongsByIds(ids: string[]): Promise<Song[]> {
     genre: row.genre,
     groupType: row.group_type,
     releaseDate: row.release_date ?? null,
+    sourceArtistId: row.source_artist_id ?? null,
   }));
 }
 
@@ -34,7 +35,7 @@ export async function getAllSongs(): Promise<Song[]> {
 
   const { data, error } = await supabase
     .from('songs')
-    .select('id, title, artist, genre, group_type, release_date')
+    .select('id, title, artist, genre, group_type, release_date, source_artist_id')
     .order('title', { ascending: true });
 
   if (error) throw new Error(`songRepository.getAllSongs: ${error.message}`);
@@ -46,5 +47,6 @@ export async function getAllSongs(): Promise<Song[]> {
     genre: row.genre,
     groupType: row.group_type,
     releaseDate: row.release_date ?? null,
+    sourceArtistId: row.source_artist_id ?? null,
   }));
 }

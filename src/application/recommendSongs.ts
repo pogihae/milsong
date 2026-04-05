@@ -1,4 +1,6 @@
 import { buildAnalytics } from '@/domain/analytics';
+import { filterDomesticCandidates } from './filterDomesticCandidates';
+import { isEligibleKoreanSong } from '@/domain/isEligibleKoreanSong';
 import { buildEraLabel } from '@/domain/eraLabel';
 import { genreMultiplier, rankComponent, scoreExposure, totalScore, totalScoreStale } from '@/domain/scoring';
 import type { RecommendInput, RecommendResult, ScoredSong } from '@/domain/types';
@@ -28,6 +30,7 @@ export async function recommendSongs(input: RecommendInput): Promise<RecommendRe
   const songIds = [...new Set(chartEntries.map((e) => e.songId))];
   const songs = await getSongsByIds(songIds);
   const songMap = new Map(songs.map((s) => [s.id, s]));
+  const eligibleSongIds = new Set(songs.filter(isEligibleKoreanSong).map((song) => song.id));
 
   const winCountMap = new Map<string, number>();
   for (const win of broadcastWins) {
@@ -39,6 +42,7 @@ export async function recommendSongs(input: RecommendInput): Promise<RecommendRe
   for (const songId of songIds) {
     const song = songMap.get(songId);
     if (!song) continue;
+    if (!eligibleSongIds.has(songId)) continue;
 
     const daysTop20Silver = chartEntries.filter(
       (e) => e.songId === songId && isInRange(e.chartDate, silverStart, silverEnd) && e.rank <= 20,
@@ -80,7 +84,7 @@ export async function recommendSongs(input: RecommendInput): Promise<RecommendRe
   }
 
   const hasGoldenTop10 = chartEntries.some(
-    (e) => isInRange(e.chartDate, goldenStart, goldenEnd) && e.rank <= 10,
+    (e) => eligibleSongIds.has(e.songId) && isInRange(e.chartDate, goldenStart, goldenEnd) && e.rank <= 10,
   );
 
   let staleMode = false;
@@ -97,6 +101,7 @@ export async function recommendSongs(input: RecommendInput): Promise<RecommendRe
     for (const songId of staleSongIds) {
       const song = songMap.get(songId);
       if (!song) continue;
+      if (!eligibleSongIds.has(songId)) continue;
 
       const daysTop20Stale = chartEntries.filter(
         (e) => e.songId === songId && isInRange(e.chartDate, staleStart, staleEnd) && e.rank <= 20,
@@ -138,7 +143,8 @@ export async function recommendSongs(input: RecommendInput): Promise<RecommendRe
     return aRank - bRank;
   });
 
-  const top3 = scoredSongs.slice(0, 3);
+  const domesticScoredSongs = await filterDomesticCandidates(scoredSongs);
+  const top3 = domesticScoredSongs.slice(0, 3);
 
   if (top3.length === 0) {
     throw new Error('주어진 입대일에 맞는 후보곡을 찾지 못했습니다.');
