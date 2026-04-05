@@ -163,6 +163,7 @@ export async function recommendSongs(input: RecommendInput): Promise<RecommendRe
   const mainScoredSong = top3[0];
   const candidates = top3.map((s, i) => ({
     rank: i + 1,
+    songId: s.song.id,
     artist: s.song.artist,
     title: s.song.title,
     totalScore: s.totalScore,

@@ -41,6 +41,7 @@ export interface ScoredSong {
 
 export interface Candidate {
   rank: number;
+  songId: string;
   artist: string;
   title: string;
   totalScore: number;
@@ -49,6 +50,14 @@ export interface Candidate {
     exposure: number;
     wins: number | null;
   };
+}
+
+export interface SongComment {
+  id: string;
+  songId: string;
+  nickname: string;
+  content: string;
+  createdAt: string; // ISO string
 }
 
 export interface RecommendResult {
