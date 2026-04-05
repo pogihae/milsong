@@ -1,13 +1,25 @@
-export const ERA_ALIASES: Record<string, string> = {};
+/**
+ * Alias mapping table: song ID -> short display keyword used in the era label.
+ * Example: { 'song-uuid-tell-me': 'Tell Me', 'song-uuid-rollin': 'Rollin' }
+ * Populate this map as songs are added to the database.
+ */
+export const ERA_ALIASES: Record<string, string> = {
+  // TODO: populate with real song IDs after seeding
+};
 
+/**
+ * Strips parentheses, subtitles, and excess whitespace from a song title,
+ * then returns the first meaningful segment.
+ */
 function stripSubtitle(title: string): string {
-  return title
-    .replace(/\s*[\(\[（【][^\)\]）】]*[\)\]）】]/g, '')
-    .trim()
-    .split(/\s+/)[0];
+  return title.replace(/\s*[\(\[].*?[\)\]]/g, '').trim().split(/\s+/)[0];
 }
 
+/**
+ * Generates the era label string for the given song.
+ * Template: "You are clearly part of the [ALIAS] era."
+ */
 export function buildEraLabel(songId: string, songTitle: string): string {
   const alias = ERA_ALIASES[songId] ?? stripSubtitle(songTitle);
-  return `당신은 확실한 [${alias}] 세대입니다.`;
+  return `You are clearly part of the [${alias}] era.`;
 }
