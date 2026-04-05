@@ -28,7 +28,7 @@ function computeExposureAndBestRank(
 }
 
 export async function recommendSongs(input: RecommendInput): Promise<RecommendResult> {
-  const { enlistmentDate: D, tone } = input;
+  const { enlistmentDate: D } = input;
 
   const [goldenStart, goldenEnd] = dateWindow(D, -14, 30);
   const [silverStart, silverEnd] = dateWindow(D, -30, -1);
@@ -173,12 +173,9 @@ export async function recommendSongs(input: RecommendInput): Promise<RecommendRe
     },
   }));
 
-  const analytics = buildAnalytics(mainScoredSong, tone);
+  const analytics = buildAnalytics(mainScoredSong);
   const eraLabel = buildEraLabel(mainScoredSong.song.id, mainScoredSong.song.title);
-  const title =
-    tone === 't_plus'
-      ? '귀하의 관물대에 붙어있던 그 목소리'
-      : '그 시절 군생활을 정의한 바로 그 노래';
+  const title = '그 시절 군생활을 정의한 바로 그 노래';
 
   return {
     title,

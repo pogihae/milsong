@@ -1,30 +1,38 @@
-import type { RecommendResult } from '@/domain/types';
+import { recommendSongs } from '@/application/recommendSongs';
+import { isValidCalendarDate } from '@/lib/dateUtils';
 import AnalyticsBlock from '@/components/AnalyticsBlock';
 import CandidateList from '@/components/CandidateList';
 import ResultCard from '@/components/ResultCard';
+import type { RecommendResult } from '@/domain/types';
 
 interface ResultPageProps {
-  searchParams: Promise<{ data?: string }>;
+  searchParams: Promise<{ q?: string }>;
 }
 
 export default async function ResultPage({ searchParams }: ResultPageProps) {
-  const params = await searchParams;
-  let result: RecommendResult | null = null;
+  const { q } = await searchParams;
 
-  if (params.data) {
-    try {
-      result = JSON.parse(decodeURIComponent(params.data)) as RecommendResult;
-    } catch {
-      result = null;
-    }
-  }
-
-  if (!result) {
+  if (!q || !isValidCalendarDate(q)) {
     return (
       <main className="relative flex min-h-screen items-center justify-center bg-slate-50 p-8 selection:bg-indigo-200">
         <div className="absolute top-[-10%] left-[-10%] h-[500px] w-[500px] animate-float rounded-full bg-indigo-400/10 mix-blend-multiply blur-3xl filter" />
         <p className="glass-panel relative z-10 rounded-3xl px-8 py-6 text-center font-medium text-slate-600 shadow-xl">
-          결과 데이터를 불러오지 못했습니다. 홈으로 돌아가 다시 시도해 주세요.
+          유효한 입대일이 없습니다. 홈으로 돌아가 다시 시도해 주세요.
+        </p>
+      </main>
+    );
+  }
+
+  let result: RecommendResult;
+  try {
+    result = await recommendSongs({ enlistmentDate: q });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : '오류가 발생했습니다.';
+    return (
+      <main className="relative flex min-h-screen items-center justify-center bg-slate-50 p-8 selection:bg-indigo-200">
+        <div className="absolute top-[-10%] left-[-10%] h-[500px] w-[500px] animate-float rounded-full bg-indigo-400/10 mix-blend-multiply blur-3xl filter" />
+        <p className="glass-panel relative z-10 rounded-3xl px-8 py-6 text-center font-medium text-slate-600 shadow-xl">
+          {message}
         </p>
       </main>
     );

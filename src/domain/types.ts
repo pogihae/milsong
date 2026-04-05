@@ -1,5 +1,3 @@
-export type Tone = 't_plus' | 'nostalgic';
-
 export type GroupType = 'female_group' | 'male_group' | 'male_solo' | 'female_solo' | 'mixed' | 'other';
 export type Genre = 'dance' | 'ballad' | 'hip_hop' | 'r_and_b' | 'trot' | 'other';
 export type ChartType = 'daily' | 'weekly';
@@ -64,5 +62,4 @@ export interface RecommendResult {
 
 export interface RecommendInput {
   enlistmentDate: string; // YYYY-MM-DD
-  tone: Tone;
 }

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { recommendSongs } from '@/application/recommendSongs';
-import type { RecommendInput, Tone } from '@/domain/types';
+import type { RecommendInput } from '@/domain/types';
 import { isValidCalendarDate } from '@/lib/dateUtils';
 
 export async function POST(req: NextRequest) {
@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid JSON body.' }, { status: 400 });
   }
 
-  const { enlistment_date, tone } = body as Record<string, string>;
+  const { enlistment_date } = body as Record<string, string>;
 
   if (!enlistment_date || !isValidCalendarDate(enlistment_date)) {
     return NextResponse.json(
@@ -20,13 +20,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const validTones: Tone[] = ['t_plus', 'nostalgic'];
-  const resolvedTone: Tone = validTones.includes(tone as Tone) ? (tone as Tone) : 'nostalgic';
-
-  const input: RecommendInput = {
-    enlistmentDate: enlistment_date,
-    tone: resolvedTone,
-  };
+  const input: RecommendInput = { enlistmentDate: enlistment_date };
 
   try {
     const result = await recommendSongs(input);
