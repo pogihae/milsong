@@ -1,36 +1,62 @@
+import Image from 'next/image';
 import type { Candidate } from '@/domain/types';
 
 interface CandidateListProps {
   candidates: Candidate[];
+  artUrls: (string | null)[];
 }
 
-export default function CandidateList({ candidates }: CandidateListProps) {
+const RANK_STYLES = [
+  'text-[#f5a623]', // 1st — gold
+  'text-[#94a3b8]', // 2nd — silver
+  'text-[#b87333]', // 3rd — bronze
+];
+
+export default function CandidateList({ candidates, artUrls }: CandidateListProps) {
   return (
-    <section className="glass-panel relative rounded-[2rem] p-6 sm:p-8">
-      <h2 className="mb-6 flex items-center gap-3 text-xl font-bold text-slate-900">
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-purple-100 text-purple-600 shadow-inner">
-          <svg aria-hidden="true" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" /></svg>
-        </span>
-        후보곡 Top {candidates.length}
+    <section className="glass-panel rounded-2xl p-6 sm:p-8">
+      <h2 className="mb-1 text-xs font-bold uppercase tracking-widest text-[#ff375f]">
+        후보곡
       </h2>
-      <ol className="space-y-4">
-        {candidates.map((c) => (
-          <li key={c.rank} className="group flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between rounded-2xl border border-white/50 bg-white/40 p-5 transition-all duration-300 hover:-translate-y-1 hover:bg-white/70 hover:shadow-xl hover:shadow-purple-500/10">
-            <div className="flex items-start gap-4">
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-900 text-sm font-bold text-white shadow-md">
-                {c.rank}
-              </span>
-              <div>
-                <p className="text-lg font-bold text-slate-900">
-                  {c.title} <span className="text-slate-500 font-medium text-base ml-1">{c.artist}</span>
-                </p>
-                <p className="mt-1 flex flex-wrap gap-2 text-xs font-medium text-slate-500">
-                  <span className="rounded-md bg-slate-100/80 px-2 py-1 backdrop-blur-sm">총점 {c.totalScore.toFixed(1)}</span>
-                  <span className="rounded-md bg-slate-100/80 px-2 py-1 backdrop-blur-sm">순위 {c.breakdown.rankComponent.toFixed(1)}</span>
-                  <span className="rounded-md bg-slate-100/80 px-2 py-1 backdrop-blur-sm">노출 {c.breakdown.exposure.toFixed(1)}</span>
-                  <span className="rounded-md bg-slate-100/80 px-2 py-1 backdrop-blur-sm text-amber-700 bg-amber-50/80">음방 1위 {c.breakdown.wins !== null ? `${c.breakdown.wins}회` : '집계 불가'}</span>
-                </p>
-              </div>
+      <p className="mb-6 text-lg font-black text-white">Top {candidates.length}</p>
+
+      <ol className="divide-y divide-white/[0.06]">
+        {candidates.map((c, i) => (
+          <li key={c.rank} className="flex items-center gap-4 py-5 first:pt-0 last:pb-0">
+            {/* Rank number */}
+            <span className={`w-6 shrink-0 text-center text-lg font-black tabular-nums ${RANK_STYLES[i] ?? 'text-white/40'}`}>
+              {c.rank}
+            </span>
+
+            {/* Album art */}
+            {artUrls[i] ? (
+              <Image
+                src={artUrls[i]!}
+                alt={`${c.title} 앨범`}
+                width={52}
+                height={52}
+                className="shrink-0 rounded-lg object-cover"
+                unoptimized
+              />
+            ) : (
+              <div className="h-[52px] w-[52px] shrink-0 rounded-lg bg-white/8" />
+            )}
+
+            {/* Title + artist */}
+            <div className="min-w-0 flex-1">
+              <p className="truncate font-bold text-white">{c.title}</p>
+              <p className="mt-0.5 truncate text-sm text-white/45">{c.artist}</p>
+            </div>
+
+            {/* Score + breakdown */}
+            <div className="shrink-0 text-right">
+              <p className="text-base font-black tabular-nums text-white">
+                {c.totalScore.toFixed(1)}
+              </p>
+              <p className="mt-0.5 text-[11px] tabular-nums text-white/35">
+                순위 {c.breakdown.rankComponent.toFixed(0)} · 노출 {c.breakdown.exposure.toFixed(0)}
+                {c.breakdown.wins !== null ? ` · 음방 ${c.breakdown.wins}회` : ''}
+              </p>
             </div>
           </li>
         ))}

@@ -1,8 +1,11 @@
 import { recommendSongs } from '@/application/recommendSongs';
 import { isValidCalendarDate } from '@/lib/dateUtils';
+import { fetchAlbumArt } from '@/lib/albumArt';
 import AnalyticsBlock from '@/components/AnalyticsBlock';
 import CandidateList from '@/components/CandidateList';
 import ResultCard from '@/components/ResultCard';
+import RetryButton from '@/components/RetryButton';
+import ShareButton from '@/components/ShareButton';
 import type { RecommendResult } from '@/domain/types';
 
 interface ResultPageProps {
@@ -14,52 +17,69 @@ export default async function ResultPage({ searchParams }: ResultPageProps) {
 
   if (!q || !isValidCalendarDate(q)) {
     return (
-      <main className="relative flex min-h-screen items-center justify-center bg-slate-50 p-8 selection:bg-indigo-200">
-        <div className="absolute top-[-10%] left-[-10%] h-[500px] w-[500px] animate-float rounded-full bg-indigo-400/10 mix-blend-multiply blur-3xl filter" />
-        <p className="glass-panel relative z-10 rounded-3xl px-8 py-6 text-center font-medium text-slate-600 shadow-xl">
-          유효한 입대일이 없습니다. 홈으로 돌아가 다시 시도해 주세요.
-        </p>
+      <main className="flex min-h-screen items-center justify-center bg-[#0e0e0e] p-8">
+        <div className="glass-panel rounded-2xl px-8 py-6 text-center">
+          <p className="font-medium text-white/60">
+            유효한 입대일이 없습니다. 홈으로 돌아가 다시 시도해 주세요.
+          </p>
+        </div>
       </main>
     );
   }
 
   let result: RecommendResult;
+  let mainArt: string | null = null;
+  let candidateArts: (string | null)[] = [];
   try {
     result = await recommendSongs({ enlistmentDate: q });
+    const artResults = await Promise.all(
+      [result.mainSong, ...result.candidates].map((s) => fetchAlbumArt(s.artist, s.title)),
+    );
+    [mainArt, ...candidateArts] = artResults;
   } catch (err) {
     const message = err instanceof Error ? err.message : '오류가 발생했습니다.';
     return (
-      <main className="relative flex min-h-screen items-center justify-center bg-slate-50 p-8 selection:bg-indigo-200">
-        <div className="absolute top-[-10%] left-[-10%] h-[500px] w-[500px] animate-float rounded-full bg-indigo-400/10 mix-blend-multiply blur-3xl filter" />
-        <p className="glass-panel relative z-10 rounded-3xl px-8 py-6 text-center font-medium text-slate-600 shadow-xl">
-          {message}
-        </p>
+      <main className="flex min-h-screen items-center justify-center bg-[#0e0e0e] p-8">
+        <div className="glass-panel rounded-2xl px-8 py-6 text-center">
+          <p className="font-medium text-white/60">{message}</p>
+        </div>
       </main>
     );
   }
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-slate-50 px-6 py-12 selection:bg-indigo-200">
-      {/* Dynamic Background Blobs */}
-      <div className="absolute top-0 right-0 h-[600px] w-[600px] animate-float rounded-full bg-indigo-400/20 mix-blend-multiply blur-3xl filter" />
-      <div className="absolute bottom-0 left-[-10%] h-[600px] w-[600px] animate-float-delayed rounded-full bg-pink-400/20 mix-blend-multiply blur-3xl filter" />
+    <main className="min-h-screen bg-[#0e0e0e] px-6 py-12 selection:bg-red-900/40">
+      {/* Top accent line */}
+      <div className="fixed inset-x-0 top-0 z-50 h-px bg-gradient-to-r from-transparent via-[#ff375f]/70 to-transparent" />
 
-      <section className="relative z-10 mx-auto max-w-3xl space-y-10">
-        <div className="space-y-4 text-center sm:text-left">
-          <p className="inline-block rounded-full bg-indigo-50 px-3 py-1 text-xs font-bold text-indigo-600 shadow-sm">
-            추천 결과
-          </p>
-          <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">{result.title}</h1>
-          {result.staleMode ? (
-            <div className="inline-flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-medium text-amber-700">
-              <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
-              같은 시기 메가 히트곡이 뚜렷하지 않아 롱런한 스테디셀러 기준으로 추천했어요.
-            </div>
-          ) : null}
+      <section className="mx-auto max-w-2xl space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-widest text-[#ff375f]">Milsong</p>
+            <h1 className="mt-1 text-2xl font-black text-white sm:text-3xl">{result.title}</h1>
+          </div>
+          <div className="flex items-center gap-2">
+            <ShareButton
+              eraLabel={result.eraLabel}
+              artist={result.mainSong.artist}
+              title={result.mainSong.title}
+            />
+            <RetryButton />
+          </div>
         </div>
 
-        <ResultCard mainSong={result.mainSong} eraLabel={result.eraLabel} />
-        <CandidateList candidates={result.candidates} />
+        {result.staleMode ? (
+          <div className="flex items-center gap-2 rounded-xl border border-amber-500/25 bg-amber-500/8 px-4 py-3 text-sm font-medium text-amber-400">
+            <svg className="h-4 w-4 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+            </svg>
+            같은 시기 메가 히트곡이 뚜렷하지 않아 롱런한 스테디셀러 기준으로 추천했어요.
+          </div>
+        ) : null}
+
+        <ResultCard mainSong={result.mainSong} eraLabel={result.eraLabel} imageUrl={mainArt} />
+        <CandidateList candidates={result.candidates} artUrls={candidateArts} />
         <AnalyticsBlock analytics={result.analytics} />
       </section>
     </main>
