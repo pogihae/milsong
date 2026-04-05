@@ -3,7 +3,22 @@
     "allow": [
       "Bash(find /d/projects/milsong -type f -name \"*\" 2>/dev/null | head -50)",
       "Bash(cd D:/projects/milsong && npx create-next-app@latest . --typescript --tailwind --eslint --app --src-dir --import-alias \"@/*\" --no-turbopack --yes 2>&1)",
-      "Bash(cd D:/projects/milsong && mkdir -p /tmp/milsong_backup && cp CLAUDE.md requirements.md /tmp/milsong_backup/ && mv CLAUDE.md requirements.md /tmp/ 2>&1)"
+      "Bash(cd D:/projects/milsong && mkdir -p /tmp/milsong_backup && cp CLAUDE.md requirements.md /tmp/milsong_backup/ && mv CLAUDE.md requirements.md /tmp/ 2>&1)",
+      "Bash(cd D:/projects/milsong && npm install @supabase/supabase-js dotenv 2>&1)",
+      "Bash(cd D:/projects/milsong && npx tsc --noEmit 2>&1)",
+      "Bash(cd D:/projects/milsong && timeout 15 npm run dev 2>&1 || true)",
+      "Bash(claude mcp:*)",
+      "Bash(npx skills:*)",
+      "Bash(gh pr create --title 'Add Supabase SSR client helpers' --body ':*)",
+      "Bash(vercel:*)",
+      "Bash(npx vercel:*)",
+      "Bash(gh pr:*)",
+      "Bash(gh api:*)",
+      "Bash(python -c \"import sys,json; comments=json.load\\(sys.stdin\\); [print\\(f'--- FILE: {c[\\\\\"path\\\\\"]} L{c[\\\\\"line\\\\\"]} ---\\\\n{c[\\\\\"body\\\\\"]}\\\\n'\\) for c in comments]\")",
+      "Bash(supabase)",
+      "Bash(python -c \"import sys,json; r=json.load\\(sys.stdin\\); print\\('replied:', r.get\\('html_url',''\\)\\)\")",
+      "mcp__supabase__list_tables",
+      "mcp__supabase__apply_migration"
     ]
   }
 }

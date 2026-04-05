@@ -1,7 +1,7 @@
 import { buildAnalytics } from '@/domain/analytics';
 import { buildEraLabel } from '@/domain/eraLabel';
 import { genreMultiplier, rankComponent, scoreExposure, totalScore, totalScoreStale } from '@/domain/scoring';
-import type { RecommendInput, RecommendResult, ScoredSong } from '@/domain/types';
+import type { ChartEntry, RecommendInput, RecommendResult, ScoredSong } from '@/domain/types';
 import { isGoldenWindow, isSilverWindow, temporalWeight } from '@/domain/windows';
 import { getBroadcastWins } from '@/infrastructure/supabase/broadcastRepository';
 import { getChartEntries } from '@/infrastructure/supabase/chartRepository';
@@ -9,6 +9,21 @@ import { getSongsByIds } from '@/infrastructure/supabase/songRepository';
 import { dateWindow, isInRange } from '@/lib/dateUtils';
 
 const STALE_W_LONG = 1.0;
+
+function computeExposureAndBestRank(
+  entries: ChartEntry[],
+  exposureStart: string,
+  exposureEnd: string,
+  goldenStart: string,
+  goldenEnd: string,
+) {
+  const daysTop10 = entries.filter(
+    (e) => isInRange(e.chartDate, exposureStart, exposureEnd) && e.rank <= 10,
+  ).length;
+  const goldenEntries = entries.filter((e) => isInRange(e.chartDate, goldenStart, goldenEnd));
+  const bestRank = goldenEntries.length > 0 ? Math.min(...goldenEntries.map((e) => e.rank)) : null;
+  return { daysTop10, exposure: scoreExposure(daysTop10), bestRank };
+}
 
 export async function recommendSongs(input: RecommendInput): Promise<RecommendResult> {
   const { enlistmentDate: D, tone } = input;
@@ -18,14 +33,23 @@ export async function recommendSongs(input: RecommendInput): Promise<RecommendRe
   const [exposureStart, exposureEnd] = dateWindow(D, 0, 100);
   const [winStart, winEnd] = dateWindow(D, -90, 100);
   const [staleStart, staleEnd] = dateWindow(D, -60, 0);
-  const [candidateWindowStart, candidateWindowEnd] = dateWindow(D, -30, 100);
+  // Fetch from D-60 to cover both the candidate window (D-30) and stale window (D-60)
+  const [candidateWindowStart, candidateWindowEnd] = dateWindow(D, -60, 100);
 
   const [chartEntries, broadcastWins] = await Promise.all([
     getChartEntries(candidateWindowStart, candidateWindowEnd, 'daily'),
     getBroadcastWins(winStart, winEnd),
   ]);
 
-  const songIds = [...new Set(chartEntries.map((e) => e.songId))];
+  // Group entries by songId once to avoid O(n×m) repeated scans per song in scoring loops
+  const entriesBySong = new Map<string, ChartEntry[]>();
+  for (const e of chartEntries) {
+    const list = entriesBySong.get(e.songId);
+    if (list) list.push(e);
+    else entriesBySong.set(e.songId, [e]);
+  }
+
+  const songIds = [...entriesBySong.keys()];
   const songs = await getSongsByIds(songIds);
   const songMap = new Map(songs.map((s) => [s.id, s]));
 
@@ -40,8 +64,10 @@ export async function recommendSongs(input: RecommendInput): Promise<RecommendRe
     const song = songMap.get(songId);
     if (!song) continue;
 
-    const daysTop20Silver = chartEntries.filter(
-      (e) => e.songId === songId && isInRange(e.chartDate, silverStart, silverEnd) && e.rank <= 20,
+    const entries = entriesBySong.get(songId)!;
+
+    const daysTop20Silver = entries.filter(
+      (e) => isInRange(e.chartDate, silverStart, silverEnd) && e.rank <= 20,
     ).length;
 
     const golden = song.releaseDate ? isGoldenWindow(D, song.releaseDate) : false;
@@ -51,17 +77,10 @@ export async function recommendSongs(input: RecommendInput): Promise<RecommendRe
     if (tw === 0) continue;
 
     const gm = genreMultiplier(song);
-    const goldenEntries = chartEntries.filter(
-      (e) => e.songId === songId && isInRange(e.chartDate, goldenStart, goldenEnd),
+    const { exposure, bestRank } = computeExposureAndBestRank(
+      entries, exposureStart, exposureEnd, goldenStart, goldenEnd,
     );
-    const bestRank = goldenEntries.length > 0 ? Math.min(...goldenEntries.map((e) => e.rank)) : null;
-
     const rc = rankComponent(bestRank, tw, gm);
-    const daysTop10 = chartEntries.filter(
-      (e) => e.songId === songId && isInRange(e.chartDate, exposureStart, exposureEnd) && e.rank <= 10,
-    ).length;
-
-    const exposure = scoreExposure(daysTop10);
     const winCount = winCountMap.get(songId) ?? 0;
     const ts = totalScore(rc, exposure, winCount);
 
@@ -86,31 +105,24 @@ export async function recommendSongs(input: RecommendInput): Promise<RecommendRe
   let staleMode = false;
   if (!hasGoldenTop10 && scoredSongs.length === 0) {
     staleMode = true;
-    const staleSongIds = [...new Set(
-      chartEntries
-        .filter((e) => isInRange(e.chartDate, staleStart, staleEnd))
-        .map((e) => e.songId),
-    )];
+    const staleSongIds = songIds.filter((songId) =>
+      entriesBySong.get(songId)!.some((e) => isInRange(e.chartDate, staleStart, staleEnd)),
+    );
 
     for (const songId of staleSongIds) {
       const song = songMap.get(songId);
       if (!song) continue;
 
-      const daysTop20Stale = chartEntries.filter(
-        (e) => e.songId === songId && isInRange(e.chartDate, staleStart, staleEnd) && e.rank <= 20,
-      ).length;
-      const daysTop10 = chartEntries.filter(
-        (e) => e.songId === songId && isInRange(e.chartDate, exposureStart, exposureEnd) && e.rank <= 10,
-      ).length;
+      const entries = entriesBySong.get(songId)!;
 
-      const exposure = scoreExposure(daysTop10);
+      const daysTop20Stale = entries.filter(
+        (e) => isInRange(e.chartDate, staleStart, staleEnd) && e.rank <= 20,
+      ).length;
+      const { exposure, bestRank } = computeExposureAndBestRank(
+        entries, exposureStart, exposureEnd, goldenStart, goldenEnd,
+      );
       const winCount = winCountMap.get(songId) ?? 0;
       const ts = totalScoreStale(daysTop20Stale, exposure, winCount, STALE_W_LONG);
-
-      const goldenEntries = chartEntries.filter(
-        (e) => e.songId === songId && isInRange(e.chartDate, goldenStart, goldenEnd),
-      );
-      const bestRank = goldenEntries.length > 0 ? Math.min(...goldenEntries.map((e) => e.rank)) : null;
 
       scoredSongs.push({
         song,
