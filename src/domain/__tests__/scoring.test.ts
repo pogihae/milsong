@@ -74,9 +74,9 @@ describe('rankComponent', () => {
 });
 
 describe('scoreExposure', () => {
-  it('returns correctly stratified score (V2)', () => {
-    // top3=10 (15), top10=20 (20), top20=30 (12) -> 47
-    expect(scoreExposure(10, 20, 30)).toBe(47);
+  it('returns correctly stratified score (V2 Tightened)', () => {
+    // top3=10 (12), top10=20 (20), top20=30 (3) -> 35
+    expect(scoreExposure(10, 20, 30)).toBe(35);
   });
 
   it('returns 0 for 0 days', () => {
@@ -93,7 +93,8 @@ describe('chartDominance', () => {
 
 describe('totalScore', () => {
   it('sums rank_component + dominance + exposure + win_count × 8', () => {
-    expect(totalScore(30, 20, 50, 4)).toBe(132); // 30+20+50+(4*8) = 132
+    // 30+20+35+(4*8) = 117
+    expect(totalScore(30, 20, 35, 4)).toBe(117); 
   });
 
   it('returns only components when winCount is 0', () => {

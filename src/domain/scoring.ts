@@ -30,11 +30,12 @@ export function rankComponent(
 }
 
 /**
- * Score_exposure_v2
+ * Score_exposure_v2 (Tightened)
  * Stratified by rank: TOP 3, TOP 10 (excluding 3), and TOP 20 (excluding 10).
+ * Multipliers lowered to prevent exposure score from becoming too broad.
  */
 export function scoreExposure(daysTop3: number, daysTop10: number, daysTop20: number): number {
-  return ((daysTop3 * 1.5 + daysTop10 * 1.0 + daysTop20 * 0.4) / 100) * 100;
+  return ((daysTop3 * 1.2 + daysTop10 * 1.0 + daysTop20 * 0.1) / 100) * 100;
 }
 
 /**
