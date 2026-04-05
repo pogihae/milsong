@@ -199,15 +199,16 @@ export async function importBroadcastWins(
     throw new Error(`Failed to clear existing broadcast wins: ${deleteError.message}`);
   }
 
-  const uniqueInserts = inserts.filter(
-    (value, index, array) =>
-      array.findIndex(
-        (candidate) =>
-          candidate.song_id === value.song_id &&
-          candidate.broadcast_date === value.broadcast_date &&
-          candidate.channel === value.channel,
-      ) === index,
-  );
+  const seenInsertKeys = new Set<string>();
+  const uniqueInserts = inserts.filter((value) => {
+    const key = `${value.song_id}|${value.broadcast_date}|${value.channel}`;
+    if (seenInsertKeys.has(key)) {
+      return false;
+    }
+
+    seenInsertKeys.add(key);
+    return true;
+  });
 
   const { error: insertError } = await supabase.from('broadcast_wins').insert(uniqueInserts, {
     defaultToNull: false,

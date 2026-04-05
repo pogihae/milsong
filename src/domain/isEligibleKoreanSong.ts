@@ -1,15 +1,7 @@
 import type { Song } from './types';
 
-const HANGUL_REGEX = /[가-힣]/;
+const HANGUL_REGEX = /[\uac00-\ud7a3]/;
 
 export function isEligibleKoreanSong(song: Song): boolean {
-  if (song.groupType !== 'other') {
-    return true;
-  }
-
-  if (song.genre !== 'other') {
-    return true;
-  }
-
-  return HANGUL_REGEX.test(song.title);
+  return song.groupType !== 'other' || song.genre !== 'other' || HANGUL_REGEX.test(song.title);
 }
