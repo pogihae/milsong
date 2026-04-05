@@ -21,5 +21,5 @@ function stripSubtitle(title: string): string {
  */
 export function buildEraLabel(songId: string, songTitle: string): string {
   const alias = ERA_ALIASES[songId] ?? stripSubtitle(songTitle);
-  return `You are clearly part of the [${alias}] era.`;
+  return `당신은 확실한 [${alias}] 세대입니다.`;
 }
