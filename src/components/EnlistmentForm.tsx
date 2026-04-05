@@ -38,7 +38,7 @@ export default function EnlistmentForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
       <div className="group relative">
-        <label htmlFor="date" className="block text-sm font-semibold text-slate-700 mb-2">
+        <label htmlFor="date" className="block text-sm font-semibold text-white/70 mb-2">
           입대일
         </label>
         <div className="relative">
@@ -50,14 +50,14 @@ export default function EnlistmentForm() {
             required
             value={dateStr}
             onChange={handleDateChange}
-            className="peer block w-full appearance-none rounded-2xl border border-slate-200 bg-white/50 px-5 py-4 text-slate-900 outline-none backdrop-blur-md transition-all focus:border-transparent focus:bg-white focus:ring-4 focus:ring-indigo-500/20 shadow-sm"
+            className="peer block w-full appearance-none rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-white placeholder:text-white/30 outline-none backdrop-blur-md transition-all focus:border-transparent focus:bg-white/8 focus:ring-4 focus:ring-fuchsia-500/20 shadow-sm"
           />
-          <div className="pointer-events-none absolute inset-0 rounded-2xl border-2 border-transparent transition-all peer-focus:border-indigo-400" aria-hidden="true" />
+          <div className="pointer-events-none absolute inset-0 rounded-2xl border-2 border-transparent transition-all peer-focus:border-fuchsia-500/50" aria-hidden="true" />
         </div>
       </div>
 
       {error ? (
-        <div role="alert" className="rounded-xl bg-red-50 p-4 text-sm font-medium text-red-600">
+        <div role="alert" className="rounded-xl bg-red-950/50 p-4 text-sm font-medium text-red-400 border border-red-500/20">
           {error}
         </div>
       ) : null}
@@ -65,7 +65,7 @@ export default function EnlistmentForm() {
       <button
         type="submit"
         disabled={isPending}
-        className="group relative inline-flex w-full items-center justify-center overflow-hidden rounded-2xl bg-slate-900 px-8 py-4 font-bold text-white transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-indigo-500/20 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70"
+        className="group relative inline-flex w-full items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-r from-violet-600 to-fuchsia-600 px-8 py-4 font-bold text-white transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-fuchsia-500/30 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70"
       >
         {!isPending && (
           <div className="absolute inset-0 flex h-full w-full justify-center [transform:skew(-12deg)_translateX(-100%)] group-hover:duration-1000 group-hover:[transform:skew(-12deg)_translateX(100%)]">
