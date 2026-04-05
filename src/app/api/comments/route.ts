@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  let body: any;
+  let body: unknown;
   try {
     body = await req.json();
     if (!body || typeof body !== 'object') throw new Error();
