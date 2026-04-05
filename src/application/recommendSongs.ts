@@ -171,8 +171,8 @@ export async function recommendSongs(input: RecommendInput): Promise<RecommendRe
   const eraLabel = buildEraLabel(mainScoredSong.song.id, mainScoredSong.song.title);
   const title =
     tone === 't_plus'
-      ? 'The voice that stayed on your locker door'
-      : 'The song that sounds like your service era';
+      ? '귀하의 관물대에 붙어있던 그 목소리'
+      : '그 시절 군생활을 정의한 바로 그 노래';
 
   return {
     title,
