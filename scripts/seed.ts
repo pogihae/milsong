@@ -18,10 +18,11 @@ if (!supabaseUrl || !serviceRoleKey) {
   process.exit(1);
 }
 
-createClient(supabaseUrl, serviceRoleKey);
+const supabase = createClient(supabaseUrl, serviceRoleKey);
 
 async function seed() {
   console.log('Seeding database...');
+  void supabase;
 
   // TODO: Insert songs
   // TODO: Insert chart entries
