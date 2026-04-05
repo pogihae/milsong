@@ -2,15 +2,23 @@
 
 import { FormEvent, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import type { Tone } from '@/domain/types';
-import { TONE_OPTIONS } from '@/domain/constants';
 
 export default function EnlistmentForm() {
   const router = useRouter();
-  const [date, setDate] = useState('');
-  const [tone, setTone] = useState<Tone>('nostalgic');
+  const [dateStr, setDateStr] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value.replace(/\D/g, '');
+    let formatted = val;
+    if (val.length >= 5 && val.length <= 6) {
+      formatted = `${val.slice(0, 4)}.${val.slice(4)}`;
+    } else if (val.length >= 7) {
+      formatted = `${val.slice(0, 4)}.${val.slice(4, 6)}.${val.slice(6, 8)}`;
+    }
+    setDateStr(formatted);
+  };
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -18,10 +26,16 @@ export default function EnlistmentForm() {
     setLoading(true);
 
     try {
+      const rawDate = dateStr.replace(/\D/g, '');
+      if (rawDate.length !== 8) {
+        throw new Error('입대일을 정확히 입력해주세요. (예: 20140512)');
+      }
+      const formattedDate = `${rawDate.slice(0, 4)}-${rawDate.slice(4, 6)}-${rawDate.slice(6, 8)}`;
+
       const res = await fetch('/api/recommend', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ enlistment_date: date, tone }),
+        body: JSON.stringify({ enlistment_date: formattedDate }),
       });
 
       if (!res.ok) {
@@ -47,53 +61,17 @@ export default function EnlistmentForm() {
         <div className="relative">
           <input
             id="date"
-            type="date"
+            type="text"
+            inputMode="numeric"
+            placeholder="숫자 8자리 입력 (예: 20140512)"
             required
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
+            value={dateStr}
+            onChange={handleDateChange}
             className="peer block w-full appearance-none rounded-2xl border border-slate-200 bg-white/50 px-5 py-4 text-slate-900 outline-none backdrop-blur-md transition-all focus:border-transparent focus:bg-white focus:ring-4 focus:ring-indigo-500/20 shadow-sm"
           />
           <div className="pointer-events-none absolute inset-0 rounded-2xl border-2 border-transparent transition-all peer-focus:border-indigo-400" aria-hidden="true" />
         </div>
       </div>
-
-      <fieldset className="space-y-4">
-        <legend className="text-sm font-semibold text-slate-700">문체 선택</legend>
-        <div className="grid gap-4 sm:grid-cols-2">
-          {TONE_OPTIONS.map((option) => (
-            <label
-              key={option.value}
-              className={`group relative flex cursor-pointer items-start gap-4 rounded-2xl border p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg ${
-                tone === option.value
-                  ? 'border-indigo-500 bg-indigo-50/50 shadow-indigo-100'
-                  : 'border-slate-200 bg-white/50 hover:border-indigo-300'
-              }`}
-            >
-              <input
-                type="radio"
-                name="tone"
-                value={option.value}
-                checked={tone === option.value}
-                onChange={() => setTone(option.value)}
-                className="peer sr-only"
-              />
-              <div
-                className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors ${
-                  tone === option.value
-                    ? 'border-indigo-600 bg-indigo-600'
-                    : 'border-slate-300 bg-white group-hover:border-indigo-400'
-                }`}
-              >
-                <div className={`h-2 w-2 rounded-full bg-white transition-transform ${tone === option.value ? 'scale-100' : 'scale-0'}`} />
-              </div>
-              <span>
-                <span className={`block font-bold transition-colors ${tone === option.value ? 'text-indigo-900' : 'text-slate-700'}`}>{option.label}</span>
-                <span className="block text-sm text-slate-500 mt-1 leading-relaxed">{option.description}</span>
-              </span>
-            </label>
-          ))}
-        </div>
-      </fieldset>
 
       {error ? (
         <div className="rounded-xl bg-red-50 p-4 text-sm font-medium text-red-600">
