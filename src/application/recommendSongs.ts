@@ -86,13 +86,11 @@ export async function recommendSongs(input: RecommendInput): Promise<RecommendRe
   let staleMode = false;
   if (!hasGoldenTop10 && scoredSongs.length === 0) {
     staleMode = true;
-    const staleSongIds = [
-      ...new Set(
-        chartEntries
-          .filter((e) => isInRange(e.chartDate, staleStart, staleEnd))
-          .map((e) => e.songId),
-      ),
-    ];
+    const staleSongIds = [...new Set(
+      chartEntries
+        .filter((e) => isInRange(e.chartDate, staleStart, staleEnd))
+        .map((e) => e.songId),
+    )];
 
     for (const songId of staleSongIds) {
       const song = songMap.get(songId);
@@ -141,7 +139,7 @@ export async function recommendSongs(input: RecommendInput): Promise<RecommendRe
   const top3 = scoredSongs.slice(0, 3);
 
   if (top3.length === 0) {
-    throw new Error('주어진 입대일에 맞는 후보곡을 찾지 못했습니다.');
+    throw new Error('No candidate songs found for the given enlistment date.');
   }
 
   const mainScoredSong = top3[0];
@@ -161,8 +159,8 @@ export async function recommendSongs(input: RecommendInput): Promise<RecommendRe
   const eraLabel = buildEraLabel(mainScoredSong.song.id, mainScoredSong.song.title);
   const title =
     tone === 't_plus'
-      ? '당신의 군번줄에 가장 가까운 입대곡입니다.'
-      : '당신의 기억을 가장 닮은 입대곡입니다.';
+      ? 'The voice that stayed on your locker door'
+      : 'The song that sounds like your service era';
 
   return {
     title,

@@ -25,13 +25,13 @@ export default function EnlistmentForm() {
 
       if (!res.ok) {
         const { error: msg } = (await res.json()) as { error?: string };
-        throw new Error(msg ?? '알 수 없는 오류가 발생했습니다.');
+        throw new Error(msg ?? 'An unknown error occurred.');
       }
 
       const data = await res.json();
       router.push(`/result?data=${encodeURIComponent(JSON.stringify(data))}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : '오류가 발생했습니다.');
+      setError(err instanceof Error ? err.message : 'An error occurred.');
     } finally {
       setLoading(false);
     }
@@ -41,7 +41,7 @@ export default function EnlistmentForm() {
     <form onSubmit={handleSubmit} className="space-y-6">
       <div>
         <label htmlFor="date" className="block text-sm font-medium text-slate-700">
-          입대일
+          Enlistment date (YYYY-MM-DD)
         </label>
         <input
           id="date"
@@ -54,11 +54,19 @@ export default function EnlistmentForm() {
       </div>
 
       <fieldset className="space-y-3">
-        <legend className="text-sm font-medium text-slate-700">문체 선택</legend>
+        <legend className="text-sm font-medium text-slate-700">Tone</legend>
         <div className="grid gap-3 sm:grid-cols-2">
           {([
-            { value: 'nostalgic', label: '추억 소환', description: '담백하고 감성적인 회상 톤' },
-            { value: 't_plus', label: 'T-Plus', description: '군대식 말맛을 살린 보고체 톤' },
+            {
+              value: 'nostalgic',
+              label: 'Nostalgic',
+              description: 'A softer, memory-driven recommendation tone.',
+            },
+            {
+              value: 't_plus',
+              label: 'Military',
+              description: 'A sharper, barracks-style recommendation tone.',
+            },
           ] as const).map((option) => (
             <label
               key={option.value}
@@ -88,7 +96,7 @@ export default function EnlistmentForm() {
         disabled={loading}
         className="inline-flex w-full items-center justify-center rounded-xl bg-sky-600 px-6 py-3 font-semibold text-white transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-60"
       >
-        {loading ? '입대곡 계산 중...' : '입대곡 찾기'}
+        {loading ? 'Analyzing...' : 'Find my song'}
       </button>
     </form>
   );
