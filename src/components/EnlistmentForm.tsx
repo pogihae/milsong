@@ -54,7 +54,7 @@ export default function EnlistmentForm() {
       </div>
 
       {error ? (
-        <div className="rounded-xl bg-red-50 p-4 text-sm font-medium text-red-600">
+        <div role="alert" className="rounded-xl bg-red-50 p-4 text-sm font-medium text-red-600">
           {error}
         </div>
       ) : null}

@@ -3,6 +3,7 @@ import { isValidCalendarDate } from '@/lib/dateUtils';
 import AnalyticsBlock from '@/components/AnalyticsBlock';
 import CandidateList from '@/components/CandidateList';
 import ResultCard from '@/components/ResultCard';
+import RetryButton from '@/components/RetryButton';
 import type { RecommendResult } from '@/domain/types';
 
 interface ResultPageProps {
@@ -46,9 +47,12 @@ export default async function ResultPage({ searchParams }: ResultPageProps) {
 
       <section className="relative z-10 mx-auto max-w-3xl space-y-10">
         <div className="space-y-4 text-center sm:text-left">
-          <p className="inline-block rounded-full bg-indigo-50 px-3 py-1 text-xs font-bold text-indigo-600 shadow-sm">
-            추천 결과
-          </p>
+          <div className="flex items-center justify-between">
+            <p className="inline-block rounded-full bg-indigo-50 px-3 py-1 text-xs font-bold text-indigo-600 shadow-sm">
+              추천 결과
+            </p>
+            <RetryButton />
+          </div>
           <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">{result.title}</h1>
           {result.staleMode ? (
             <div className="inline-flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-medium text-amber-700">
