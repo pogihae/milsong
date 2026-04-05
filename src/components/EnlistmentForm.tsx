@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation';
 export default function EnlistmentForm() {
   const router = useRouter();
   const [dateStr, setDateStr] = useState('');
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -20,36 +19,17 @@ export default function EnlistmentForm() {
     setDateStr(formatted);
   };
 
-  async function handleSubmit(e: FormEvent) {
+  function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
-    setLoading(true);
 
-    try {
-      const rawDate = dateStr.replace(/\D/g, '');
-      if (rawDate.length !== 8) {
-        throw new Error('입대일을 정확히 입력해주세요. (예: 20140512)');
-      }
-      const formattedDate = `${rawDate.slice(0, 4)}-${rawDate.slice(4, 6)}-${rawDate.slice(6, 8)}`;
-
-      const res = await fetch('/api/recommend', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ enlistment_date: formattedDate }),
-      });
-
-      if (!res.ok) {
-        const { error: msg } = (await res.json()) as { error?: string };
-        throw new Error(msg ?? '알 수 없는 오류가 발생했습니다.');
-      }
-
-      const data = await res.json();
-      router.push(`/result?data=${encodeURIComponent(JSON.stringify(data))}`);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : '오류가 발생했습니다.');
-    } finally {
-      setLoading(false);
+    const rawDate = dateStr.replace(/\D/g, '');
+    if (rawDate.length !== 8) {
+      setError('입대일을 정확히 입력해주세요. (예: 20140512)');
+      return;
     }
+    const formattedDate = `${rawDate.slice(0, 4)}-${rawDate.slice(4, 6)}-${rawDate.slice(6, 8)}`;
+    router.push(`/result?q=${formattedDate}`);
   }
 
   return (
@@ -81,25 +61,12 @@ export default function EnlistmentForm() {
 
       <button
         type="submit"
-        disabled={loading}
-        className="group relative inline-flex w-full items-center justify-center overflow-hidden rounded-2xl bg-slate-900 px-8 py-4 font-bold text-white transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-indigo-500/20 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:scale-100"
+        className="group relative inline-flex w-full items-center justify-center overflow-hidden rounded-2xl bg-slate-900 px-8 py-4 font-bold text-white transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-indigo-500/20 active:scale-[0.98]"
       >
         <div className="absolute inset-0 flex h-full w-full justify-center [transform:skew(-12deg)_translateX(-100%)] group-hover:duration-1000 group-hover:[transform:skew(-12deg)_translateX(100%)]">
           <div className="relative h-full w-8 bg-white/20" />
         </div>
-        <span className="relative z-10 flex items-center justify-center gap-2">
-          {loading ? (
-            <>
-              <svg className="h-5 w-5 animate-spin text-white/70" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              입대곡 찾는 중...
-            </>
-          ) : (
-            '내 입대곡 찾기'
-          )}
-        </span>
+        <span className="relative z-10">내 입대곡 찾기</span>
       </button>
     </form>
   );

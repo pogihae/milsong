@@ -28,20 +28,15 @@ function makeScoredSong(overrides: Partial<ScoredSong> = {}): ScoredSong {
 }
 
 describe('buildAnalytics', () => {
-  it('returns the nostalgic golden sentence', () => {
-    const lines = buildAnalytics(makeScoredSong({ isGolden: true }), 'nostalgic');
+  it('returns the golden sentence', () => {
+    const lines = buildAnalytics(makeScoredSong({ isGolden: true }));
     expect(lines).toContain(
       '입대 직전·직후에 신곡으로 차트에 강하게 노출된 곡입니다.',
     );
   });
 
-  it('returns the military golden sentence for t_plus', () => {
-    const lines = buildAnalytics(makeScoredSong({ isGolden: true }), 't_plus');
-    expect(lines).toContain('귀하의 입대 전후로 신곡으로 차트를 강타한 곡입니다.');
-  });
-
   it('returns the silver sentence without the golden sentence', () => {
-    const lines = buildAnalytics(makeScoredSong({ isSilver: true }), 'nostalgic');
+    const lines = buildAnalytics(makeScoredSong({ isSilver: true }));
     expect(lines).toContain(
       '입대 전부터 이미 차트 상위권을 유지하던 롱런 곡입니다.',
     );
@@ -60,7 +55,6 @@ describe('buildAnalytics', () => {
           releaseDate: '2023-01-01',
         },
       }),
-      'nostalgic',
     );
 
     const withoutGenre = buildAnalytics(
@@ -74,7 +68,6 @@ describe('buildAnalytics', () => {
           releaseDate: '2023-01-01',
         },
       }),
-      'nostalgic',
     );
 
     expect(withGenre).toContain(
@@ -84,7 +77,7 @@ describe('buildAnalytics', () => {
   });
 
   it('includes win and exposure lines when present', () => {
-    const lines = buildAnalytics(makeScoredSong({ winCount: 8, scoreExposure: 42 }), 'nostalgic');
+    const lines = buildAnalytics(makeScoredSong({ winCount: 8, scoreExposure: 42 }));
     expect(lines).toContain(
       '이 곡은 해당 시기 음악 방송에서 8회 1위를 차지했습니다.',
     );
@@ -94,7 +87,7 @@ describe('buildAnalytics', () => {
   });
 
   it('omits win and exposure lines when absent', () => {
-    const lines = buildAnalytics(makeScoredSong({ winCount: 0, scoreExposure: 0 }), 'nostalgic');
+    const lines = buildAnalytics(makeScoredSong({ winCount: 0, scoreExposure: 0 }));
     expect(lines.some((line) => line.includes('음방'))).toBe(false);
     expect(lines.some((line) => line.includes('TOP 10'))).toBe(false);
   });
