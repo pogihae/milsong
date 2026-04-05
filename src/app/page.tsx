@@ -4,9 +4,9 @@ export default function Home() {
   return (
     <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-slate-50 px-6 py-16 text-slate-900 selection:bg-indigo-200">
       {/* Dynamic Background Blobs */}
-      <div className="absolute top-[-10%] left-[-10%] h-[500px] w-[500px] animate-float rounded-full bg-indigo-400/20 mix-blend-multiply blur-3xl filter" />
-      <div className="absolute top-[20%] right-[-10%] h-[600px] w-[600px] animate-float-delayed rounded-full bg-pink-400/20 mix-blend-multiply blur-3xl filter" />
-      <div className="absolute bottom-[-20%] left-[20%] h-[500px] w-[500px] animate-float rounded-full bg-sky-400/20 mix-blend-multiply blur-3xl filter" />
+      <div aria-hidden="true" className="absolute top-[-10%] left-[-10%] h-[500px] w-[500px] animate-float rounded-full bg-indigo-400/20 mix-blend-multiply blur-3xl filter" />
+      <div aria-hidden="true" className="absolute top-[20%] right-[-10%] h-[600px] w-[600px] animate-float-delayed rounded-full bg-pink-400/20 mix-blend-multiply blur-3xl filter" />
+      <div aria-hidden="true" className="absolute bottom-[-20%] left-[20%] h-[500px] w-[500px] animate-float rounded-full bg-sky-400/20 mix-blend-multiply blur-3xl filter" />
 
       <section className="relative z-10 w-full max-w-3xl rounded-[2.5rem] p-8 sm:p-12 glass-panel">
         <div className="space-y-4 text-center sm:text-left">
