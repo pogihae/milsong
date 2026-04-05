@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS historical_charts (
   source      TEXT        NOT NULL,
   chart_year  INTEGER     NOT NULL CHECK (chart_year >= 1900),
   rank        SMALLINT    NOT NULL CHECK (rank >= 1),
-  song_id     UUID        NOT NULL REFERENCES songs (id) ON DELETE CASCADE,
+  song_id     TEXT        NOT NULL REFERENCES songs (id) ON DELETE CASCADE,
   notes       TEXT,
   created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
   UNIQUE (source, chart_year, rank)
