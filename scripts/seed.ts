@@ -18,11 +18,11 @@ if (!supabaseUrl || !serviceRoleKey) {
   process.exit(1);
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const supabase = createClient(supabaseUrl, serviceRoleKey);
 
 async function seed() {
   console.log('Seeding database...');
-  void supabase;
 
   // TODO: Insert songs
   // TODO: Insert chart entries

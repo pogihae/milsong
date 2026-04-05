@@ -2,7 +2,7 @@ export const ERA_ALIASES: Record<string, string> = {};
 
 function stripSubtitle(title: string): string {
   return title
-    .replace(/\s*[\(\[（][^\)\]）]*[\)\]）]/g, '')
+    .replace(/\s*[\(\[（【][^\)\]）】]*[\)\]）】]/g, '')
     .trim()
     .split(/\s+/)[0];
 }

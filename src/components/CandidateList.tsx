@@ -16,7 +16,8 @@ export default function CandidateList({ candidates }: CandidateListProps) {
             </p>
             <p className="mt-2 text-sm text-slate-600">
               총점 {c.totalScore.toFixed(1)} | 순위 점수 {c.breakdown.rankComponent.toFixed(1)} |
-              노출 점수 {c.breakdown.exposure.toFixed(1)} | 음방 1위 {c.breakdown.wins ?? 0}회
+              노출 점수 {c.breakdown.exposure.toFixed(1)} | 음방 1위{' '}
+              {c.breakdown.wins !== null ? `${c.breakdown.wins}회` : '집계 불가'}
             </p>
           </li>
         ))}
