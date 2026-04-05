@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find /d/projects/milsong -type f -name \"*\" 2>/dev/null | head -50)",
+      "Bash(cd D:/projects/milsong && npx create-next-app@latest . --typescript --tailwind --eslint --app --src-dir --import-alias \"@/*\" --no-turbopack --yes 2>&1)",
+      "Bash(cd D:/projects/milsong && mkdir -p /tmp/milsong_backup && cp CLAUDE.md requirements.md /tmp/milsong_backup/ && mv CLAUDE.md requirements.md /tmp/ 2>&1)"
+    ]
+  }
+}
