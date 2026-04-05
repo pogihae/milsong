@@ -37,6 +37,8 @@ export interface ScoredSong {
   genreMultiplier: number;
   isGolden: boolean;
   isSilver: boolean;
+  isBronze: boolean;
+  chartDominance: number;
 }
 
 export interface Candidate {
@@ -47,6 +49,7 @@ export interface Candidate {
   totalScore: number;
   breakdown: {
     rankComponent: number;
+    dominance: number;
     exposure: number;
     wins: number | null;
   };
@@ -69,6 +72,15 @@ export interface RecommendResult {
   staleMode: boolean;
 }
 
+export interface ScoringParams {
+  goldenWeight?: number;
+  silverWeight?: number;
+  bronzeWeight?: number;
+  genreDanceMultiplier?: number;
+  winCountMultiplier?: number;
+}
+
 export interface RecommendInput {
   enlistmentDate: string; // YYYY-MM-DD
+  scoringParams?: ScoringParams;
 }
