@@ -9,8 +9,10 @@
     "lint": "eslint",
     "ingest:bugs": "tsx scripts/ingest.ts --source=bugs",
     "ingest:bugs:backfill": "tsx scripts/ingest.ts --source=bugs --mode=backfill --from=2019-01-01 --to=2020-12-31",
+    "ingest:bugs:backfill:chunks": "tsx scripts/backfill-bugs-chunks.ts",
     "ingest:bugs:sync": "tsx scripts/ingest.ts --source=bugs --mode=incremental --days=2",
     "ingest:bugs:enrich": "tsx scripts/enrich-bugs-metadata.ts",
+    "ingest:historical": "tsx scripts/bootstrap-historical.ts",
     "ingest:wins": "tsx scripts/import-broadcast-wins.ts",
     "test": "vitest run",
     "test:watch": "vitest"
