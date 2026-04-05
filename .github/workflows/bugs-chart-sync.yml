@@ -16,8 +16,14 @@ on:
       days:
         description: Optional number of days for incremental mode
         required: false
+      wins_from_year:
+        description: Optional first year for broadcast wins import
+        required: false
+      wins_to_year:
+        description: Optional last year for broadcast wins import
+        required: false
   schedule:
-    - cron: '20 18 * * *'
+    - cron: '20 18 * * 6'
 
 jobs:
   sync:
@@ -40,7 +46,24 @@ jobs:
         if: github.event_name == 'schedule'
         run: npm run ingest:bugs:sync
 
+      - name: Enrich Bugs metadata
+        if: github.event_name == 'schedule'
+        run: npm run ingest:bugs:enrich
+
+      - name: Import broadcast wins
+        if: github.event_name == 'schedule'
+        run: npm run ingest:wins
+
       - name: Run manual sync
         if: github.event_name == 'workflow_dispatch'
         run: |
           node -e "const args = []; const input = process.env.INPUT_MODE; args.push(`--mode=${input}`); if (process.env.INPUT_FROM) args.push(`--from=${process.env.INPUT_FROM}`); if (process.env.INPUT_TO) args.push(`--to=${process.env.INPUT_TO}`); if (process.env.INPUT_DAYS) args.push(`--days=${process.env.INPUT_DAYS}`); console.log(args.join(' ')); require('node:child_process').execFileSync('npm', ['run', 'ingest:bugs', '--', ...args], { stdio: 'inherit', shell: true });"
+
+      - name: Run manual metadata enrichment
+        if: github.event_name == 'workflow_dispatch'
+        run: npm run ingest:bugs:enrich
+
+      - name: Run manual broadcast win import
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          node -e "const args = []; if (process.env.INPUT_WINS_FROM_YEAR) args.push(`--from-year=${process.env.INPUT_WINS_FROM_YEAR}`); if (process.env.INPUT_WINS_TO_YEAR) args.push(`--to-year=${process.env.INPUT_WINS_TO_YEAR}`); console.log(args.join(' ')); require('node:child_process').execFileSync('npm', ['run', 'ingest:wins', '--', ...args], { stdio: 'inherit', shell: true });"

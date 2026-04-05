@@ -16,16 +16,44 @@ interface SongLookupRow {
   artist: string;
 }
 
-const SOURCES: SourceConfig[] = [
-  { channel: 'KBS', year: 2019, url: 'https://en.wikipedia.org/wiki/List_of_Music_Bank_Chart_winners_(2019)' },
-  { channel: 'KBS', year: 2020, url: 'https://en.wikipedia.org/wiki/List_of_Music_Bank_Chart_winners_(2020)' },
-  { channel: 'SBS', year: 2019, url: 'https://en.wikipedia.org/wiki/List_of_Inkigayo_Chart_winners_(2019)' },
-  { channel: 'SBS', year: 2020, url: 'https://en.wikipedia.org/wiki/List_of_Inkigayo_Chart_winners_(2020)' },
-  { channel: 'Mnet', year: 2019, url: 'https://en.wikipedia.org/wiki/List_of_M_Countdown_Chart_winners_(2019)' },
-  { channel: 'Mnet', year: 2020, url: 'https://en.wikipedia.org/wiki/List_of_M_Countdown_Chart_winners_(2020)' },
-  { channel: 'MBC', year: 2019, url: 'https://en.wikipedia.org/wiki/List_of_Show!_Music_Core_Chart_winners_(2019)' },
-  { channel: 'MBC', year: 2020, url: 'https://en.wikipedia.org/wiki/List_of_Show!_Music_Core_Chart_winners_(2020)' },
-];
+export interface BroadcastImportOptions {
+  fromYear?: number;
+  toYear?: number;
+}
+
+export interface BroadcastImportSummary {
+  fromYear: number;
+  toYear: number;
+  skippedSources: number;
+  importedWins: number;
+  matchedWins: number;
+  unmatchedWins: number;
+}
+
+const FIRST_SUPPORTED_YEAR = 2019;
+
+const CHANNEL_PATHS: Record<Channel, string> = {
+  KBS: 'Music_Bank',
+  SBS: 'Inkigayo',
+  Mnet: 'M_Countdown',
+  MBC: 'Show!_Music_Core',
+};
+
+function buildSources(fromYear: number, toYear: number): SourceConfig[] {
+  const sources: SourceConfig[] = [];
+
+  for (let year = fromYear; year <= toYear; year += 1) {
+    for (const channel of Object.keys(CHANNEL_PATHS) as Channel[]) {
+      sources.push({
+        channel,
+        year,
+        url: `https://en.wikipedia.org/wiki/List_of_${CHANNEL_PATHS[channel]}_Chart_winners_(${year})`,
+      });
+    }
+  }
+
+  return sources;
+}
 
 function normalizeText(value: string): string {
   return value
@@ -34,24 +62,21 @@ function normalizeText(value: string): string {
     .replace(/\[[^\]]+\]/g, '')
     .replace(/\(feat\.[^)]+\)/gi, '')
     .replace(/\(featuring[^)]+\)/gi, '')
-    .replace(/[^a-z0-9가-힣]/g, '');
+    .replace(/[^a-z0-9\u3131-\u318e\uac00-\ud7a3]/g, '');
 }
 
 function artistAliases(rawArtist: string): string[] {
   const aliases = new Set<string>();
-  const cleaned = rawArtist.replace(/[–—]/g, '-');
+  const cleaned = rawArtist.replace(/[~\u2010-\u2015]/g, '-');
+
   aliases.add(normalizeText(cleaned));
+  aliases.add(normalizeText(cleaned.replace(/\([^)]*\)/g, ' ')));
 
-  const baseWithoutParens = cleaned.replace(/\([^)]*\)/g, ' ');
-  aliases.add(normalizeText(baseWithoutParens));
-
-  const parentheticalParts = [...cleaned.matchAll(/\(([^)]+)\)/g)].map((match) => match[1]);
-  for (const part of parentheticalParts) {
+  for (const part of [...cleaned.matchAll(/\(([^)]+)\)/g)].map((match) => match[1])) {
     aliases.add(normalizeText(part));
   }
 
-  const splitParts = cleaned.split(/[,/&+]| and | x | X | feat\.|Feat\./);
-  for (const part of splitParts) {
+  for (const part of cleaned.split(/[,/&+]| and | x | X | feat\.|Feat\./)) {
     aliases.add(normalizeText(part));
   }
 
@@ -82,14 +107,39 @@ function chooseSongMatch(winner: MusicShowWinnerRow, songs: SongLookupRow[]): So
   return matchedByArtist[0] ?? candidates[0];
 }
 
-export interface BroadcastImportSummary {
-  importedWins: number;
-  matchedWins: number;
-  unmatchedWins: number;
+function currentUtcYear(): number {
+  return new Date().getUTCFullYear();
 }
 
-export async function importBroadcastWins(): Promise<BroadcastImportSummary> {
+function resolveYearRange(options: BroadcastImportOptions): { fromYear: number; toYear: number } {
+  const fromYear = options.fromYear ?? FIRST_SUPPORTED_YEAR;
+  const toYear = options.toYear ?? currentUtcYear();
+
+  if (!Number.isInteger(fromYear) || !Number.isInteger(toYear)) {
+    throw new Error('Broadcast win import requires integer year values.');
+  }
+
+  if (fromYear < FIRST_SUPPORTED_YEAR) {
+    throw new Error(`Broadcast win import only supports years >= ${FIRST_SUPPORTED_YEAR}.`);
+  }
+
+  if (fromYear > toYear) {
+    throw new Error('--from-year must be less than or equal to --to-year.');
+  }
+
+  return { fromYear, toYear };
+}
+
+function isNotFoundError(error: unknown): boolean {
+  return error instanceof Error && error.message.includes('404');
+}
+
+export async function importBroadcastWins(
+  options: BroadcastImportOptions = {},
+): Promise<BroadcastImportSummary> {
+  const { fromYear, toYear } = resolveYearRange(options);
   const supabase = getIngestSupabaseClient();
+
   const { data: songs, error: songsError } = await supabase
     .from('songs')
     .select('id, title, artist')
@@ -101,11 +151,21 @@ export async function importBroadcastWins(): Promise<BroadcastImportSummary> {
 
   const songRows = (songs ?? []) as SongLookupRow[];
   const winnersByChannel = new Map<Channel, MusicShowWinnerRow[]>();
+  let skippedSources = 0;
 
-  for (const source of SOURCES) {
-    const html = await fetchWikipediaPage(source.url);
-    const rows = parseMusicShowWinners(html, source.year);
-    winnersByChannel.set(source.channel, [...(winnersByChannel.get(source.channel) ?? []), ...rows]);
+  for (const source of buildSources(fromYear, toYear)) {
+    try {
+      const html = await fetchWikipediaPage(source.url);
+      const rows = parseMusicShowWinners(html, source.year);
+      winnersByChannel.set(source.channel, [...(winnersByChannel.get(source.channel) ?? []), ...rows]);
+    } catch (error) {
+      if (isNotFoundError(error)) {
+        skippedSources += 1;
+        continue;
+      }
+
+      throw error;
+    }
   }
 
   let matchedWins = 0;
@@ -132,8 +192,8 @@ export async function importBroadcastWins(): Promise<BroadcastImportSummary> {
   const { error: deleteError } = await supabase
     .from('broadcast_wins')
     .delete()
-    .gte('broadcast_date', '2019-01-01')
-    .lte('broadcast_date', '2020-12-31');
+    .gte('broadcast_date', `${fromYear}-01-01`)
+    .lte('broadcast_date', `${toYear}-12-31`);
 
   if (deleteError) {
     throw new Error(`Failed to clear existing broadcast wins: ${deleteError.message}`);
@@ -158,6 +218,9 @@ export async function importBroadcastWins(): Promise<BroadcastImportSummary> {
   }
 
   return {
+    fromYear,
+    toYear,
+    skippedSources,
     importedWins: uniqueInserts.length,
     matchedWins,
     unmatchedWins,
