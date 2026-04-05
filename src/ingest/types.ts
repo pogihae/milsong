@@ -35,7 +35,6 @@ export interface SongUpsertRecord {
 }
 
 export interface ChartUpsertRecord {
-  id: string;
   chart_date: string;
   rank: number;
   song_id: string;

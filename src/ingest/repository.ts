@@ -162,7 +162,6 @@ export async function upsertDailyChartSnapshot(
     }
 
     return {
-      id: crypto.randomUUID(),
       chart_date: snapshot.chartDate,
       rank: row.rank,
       song_id: songId,
