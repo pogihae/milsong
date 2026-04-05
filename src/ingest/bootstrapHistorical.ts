@@ -17,6 +17,8 @@ type SongInsert = {
   updated_at: string;
 };
 
+const DATABASE_CHUNK_SIZE = 500;
+
 function nowIso(): string {
   return new Date().toISOString();
 }
@@ -30,7 +32,17 @@ function normalizeKeyPart(value: string): string {
 }
 
 function sourceSongIdFor(row: HistoricalChartInputRow): string {
-  return `${row.source}:${row.year}:${row.rank}:${normalizeKeyPart(row.artist)}:${normalizeKeyPart(row.title)}`;
+  return `${row.source}:${normalizeKeyPart(row.artist)}:${normalizeKeyPart(row.title)}`;
+}
+
+function chunkArray<T>(values: T[], chunkSize: number): T[][] {
+  const chunks: T[][] = [];
+
+  for (let index = 0; index < values.length; index += chunkSize) {
+    chunks.push(values.slice(index, index + chunkSize));
+  }
+
+  return chunks;
 }
 
 async function createBootstrapRun(
@@ -118,70 +130,88 @@ export async function bootstrapHistoricalCharts(
   const timestamp = nowIso();
 
   try {
-    const songRecords: SongInsert[] = rows.map((row) => ({
-      id: randomUUID(),
-      title: row.title.trim(),
-      artist: row.artist.trim(),
-      genre: row.genre ?? 'other',
-      group_type: row.groupType ?? 'other',
-      release_date: row.releaseDate ?? null,
-      source,
-      source_song_id: sourceSongIdFor(row),
-      source_artist_id: null,
-      source_album_id: null,
-      updated_at: timestamp,
-    }));
+    const songRecordsMap = new Map<string, SongInsert>();
+    for (const row of rows) {
+      const sourceSongId = sourceSongIdFor(row);
+      if (songRecordsMap.has(sourceSongId)) {
+        continue;
+      }
+
+      songRecordsMap.set(sourceSongId, {
+        id: randomUUID(),
+        title: row.title.trim(),
+        artist: row.artist.trim(),
+        genre: row.genre ?? 'other',
+        group_type: row.groupType ?? 'other',
+        release_date: row.releaseDate ?? null,
+        source,
+        source_song_id: sourceSongId,
+        source_artist_id: null,
+        source_album_id: null,
+        updated_at: timestamp,
+      });
+    }
+    const songRecords = [...songRecordsMap.values()];
 
     const sourceSongIds = songRecords.map((record) => record.source_song_id);
-    const { data: existingSongs, error: existingSongsError } = await supabase
-      .from('songs')
-      .select('source_song_id')
-      .eq('source', source)
-      .in('source_song_id', sourceSongIds);
+    const existingIds = new Set<string>();
+    for (const sourceSongIdChunk of chunkArray(sourceSongIds, DATABASE_CHUNK_SIZE)) {
+      const { data: existingSongs, error: existingSongsError } = await supabase
+        .from('songs')
+        .select('source_song_id')
+        .eq('source', source)
+        .in('source_song_id', sourceSongIdChunk);
 
-    if (existingSongsError) {
-      throw new Error(`Failed to load historical songs: ${existingSongsError.message}`);
+      if (existingSongsError) {
+        throw new Error(`Failed to load historical songs: ${existingSongsError.message}`);
+      }
+
+      for (const row of existingSongs ?? []) {
+        existingIds.add(row.source_song_id as string);
+      }
     }
 
-    const existingIds = new Set((existingSongs ?? []).map((row) => row.source_song_id as string));
     const songsToInsert = songRecords.filter((record) => !existingIds.has(record.source_song_id));
 
-    if (songsToInsert.length > 0) {
-      const { error: insertSongsError } = await supabase.from('songs').insert(songsToInsert, {
+    for (const songInsertChunk of chunkArray(songsToInsert, DATABASE_CHUNK_SIZE)) {
+      if (songInsertChunk.length === 0) {
+        continue;
+      }
+
+      const { error: insertSongsError } = await supabase.from('songs').insert(songInsertChunk, {
         defaultToNull: false,
       });
-
       if (insertSongsError) {
         throw new Error(`Failed to insert historical songs: ${insertSongsError.message}`);
       }
     }
 
-    const { data: songRows, error: songRowsError } = await supabase
-      .from('songs')
-      .select('id, source_song_id')
-      .eq('source', source)
-      .in('source_song_id', sourceSongIds);
+    const songIdBySourceSongId = new Map<string, string>();
+    for (const sourceSongIdChunk of chunkArray(sourceSongIds, DATABASE_CHUNK_SIZE)) {
+      const { data: songRows, error: songRowsError } = await supabase
+        .from('songs')
+        .select('id, source_song_id')
+        .eq('source', source)
+        .in('source_song_id', sourceSongIdChunk);
 
-    if (songRowsError) {
-      throw new Error(`Failed to resolve historical song ids: ${songRowsError.message}`);
+      if (songRowsError) {
+        throw new Error(`Failed to resolve historical song ids: ${songRowsError.message}`);
+      }
+
+      for (const row of songRows ?? []) {
+        songIdBySourceSongId.set(row.source_song_id as string, row.id as string);
+      }
     }
 
-    const songIdBySourceSongId = new Map(
-      (songRows ?? []).map((row) => [row.source_song_id as string, row.id as string]),
-    );
-
     const yearRange = [...new Set(rows.map((row) => row.year))].sort((a, b) => a - b);
+    const { error: deleteError } = await supabase
+      .from('historical_charts')
+      .delete()
+      .eq('source', source)
+      .in('chart_year', yearRange);
 
-    for (const year of yearRange) {
-      const { error: deleteError } = await supabase
-        .from('historical_charts')
-        .delete()
-        .eq('source', source)
-        .eq('chart_year', year);
-
-      if (deleteError) {
-        throw new Error(`Failed to clear historical chart rows for ${year}: ${deleteError.message}`);
-      }
+    if (deleteError) {
+      throw new Error(`Failed to clear historical chart rows: ${deleteError.message}`);
     }
 
     const chartRows = rows.map((row) => {
@@ -199,12 +229,14 @@ export async function bootstrapHistoricalCharts(
       };
     });
 
-    const { error: insertChartsError } = await supabase.from('historical_charts').insert(chartRows, {
-      defaultToNull: false,
-    });
+    for (const chartInsertChunk of chunkArray(chartRows, DATABASE_CHUNK_SIZE)) {
+      const { error: insertChartsError } = await supabase.from('historical_charts').insert(chartInsertChunk, {
+        defaultToNull: false,
+      });
 
-    if (insertChartsError) {
-      throw new Error(`Failed to insert historical chart rows: ${insertChartsError.message}`);
+      if (insertChartsError) {
+        throw new Error(`Failed to insert historical chart rows: ${insertChartsError.message}`);
+      }
     }
 
     await completeBootstrapRun(supabase, runId, 'succeeded', chartRows.length);

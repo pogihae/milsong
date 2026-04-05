@@ -32,10 +32,6 @@ function minDate(a: string, b: string): string {
   return a <= b ? a : b;
 }
 
-function formatDate(value: Date): string {
-  return value.toISOString().slice(0, 10);
-}
-
 export async function runChunkedBackfill(options: ChunkedBackfillOptions): Promise<ChunkedBackfillSummary> {
   const chunkDays = options.chunkDays ?? 31;
   if (!Number.isInteger(chunkDays) || chunkDays < 1) {
@@ -66,7 +62,7 @@ export async function runChunkedBackfill(options: ChunkedBackfillOptions): Promi
     processedChunks += 1;
     processedDays += summary.processedDays;
     syncedChartRows += summary.syncedChartRows;
-    cursor = formatDate(parseIsoDate(addDays(chunkEnd, 1)));
+    cursor = addDays(chunkEnd, 1);
   }
 
   return {
