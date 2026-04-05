@@ -1,10 +1,11 @@
 'use client';
 
-import { FormEvent, useState } from 'react';
+import { FormEvent, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 
 export default function EnlistmentForm() {
   const router = useRouter();
+  const [isPending, startTransition] = useTransition();
   const [dateStr, setDateStr] = useState('');
   const [error, setError] = useState<string | null>(null);
 
@@ -29,7 +30,9 @@ export default function EnlistmentForm() {
       return;
     }
     const formattedDate = `${rawDate.slice(0, 4)}-${rawDate.slice(4, 6)}-${rawDate.slice(6, 8)}`;
-    router.push(`/result?q=${formattedDate}`);
+    startTransition(() => {
+      router.push(`/result?q=${formattedDate}`);
+    });
   }
 
   return (
@@ -61,12 +64,20 @@ export default function EnlistmentForm() {
 
       <button
         type="submit"
-        className="group relative inline-flex w-full items-center justify-center overflow-hidden rounded-2xl bg-slate-900 px-8 py-4 font-bold text-white transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-indigo-500/20 active:scale-[0.98]"
+        disabled={isPending}
+        className="group relative inline-flex w-full items-center justify-center overflow-hidden rounded-2xl bg-slate-900 px-8 py-4 font-bold text-white transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-indigo-500/20 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70"
       >
-        <div className="absolute inset-0 flex h-full w-full justify-center [transform:skew(-12deg)_translateX(-100%)] group-hover:duration-1000 group-hover:[transform:skew(-12deg)_translateX(100%)]">
-          <div className="relative h-full w-8 bg-white/20" />
-        </div>
-        <span className="relative z-10">내 입대곡 찾기</span>
+        {!isPending && (
+          <div className="absolute inset-0 flex h-full w-full justify-center [transform:skew(-12deg)_translateX(-100%)] group-hover:duration-1000 group-hover:[transform:skew(-12deg)_translateX(100%)]">
+            <div className="relative h-full w-8 bg-white/20" />
+          </div>
+        )}
+        <span className="relative z-10 flex items-center gap-2">
+          {isPending && (
+            <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+          )}
+          {isPending ? '입대곡 계산 중...' : '내 입대곡 찾기'}
+        </span>
       </button>
     </form>
   );

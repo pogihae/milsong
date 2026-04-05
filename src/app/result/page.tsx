@@ -1,5 +1,6 @@
 import { recommendSongs } from '@/application/recommendSongs';
 import { isValidCalendarDate } from '@/lib/dateUtils';
+import { fetchAlbumArt } from '@/lib/albumArt';
 import AnalyticsBlock from '@/components/AnalyticsBlock';
 import CandidateList from '@/components/CandidateList';
 import ResultCard from '@/components/ResultCard';
@@ -25,8 +26,14 @@ export default async function ResultPage({ searchParams }: ResultPageProps) {
   }
 
   let result: RecommendResult;
+  let mainArt: string | null = null;
+  let candidateArts: (string | null)[] = [];
   try {
     result = await recommendSongs({ enlistmentDate: q });
+    const artResults = await Promise.all(
+      [result.mainSong, ...result.candidates].map((s) => fetchAlbumArt(s.artist, s.title)),
+    );
+    [mainArt, ...candidateArts] = artResults;
   } catch (err) {
     const message = err instanceof Error ? err.message : '오류가 발생했습니다.';
     return (
@@ -62,8 +69,8 @@ export default async function ResultPage({ searchParams }: ResultPageProps) {
           ) : null}
         </div>
 
-        <ResultCard mainSong={result.mainSong} eraLabel={result.eraLabel} />
-        <CandidateList candidates={result.candidates} />
+        <ResultCard mainSong={result.mainSong} eraLabel={result.eraLabel} imageUrl={mainArt} />
+        <CandidateList candidates={result.candidates} artUrls={candidateArts} />
         <AnalyticsBlock analytics={result.analytics} />
       </section>
     </main>
