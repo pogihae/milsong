@@ -1,0 +1,67 @@
+export type Tone = 't_plus' | 'nostalgic';
+
+export type GroupType = 'female_group' | 'male_group' | 'male_solo' | 'female_solo' | 'mixed' | 'other';
+export type Genre = 'dance' | 'ballad' | 'hip_hop' | 'r_and_b' | 'trot' | 'other';
+export type ChartType = 'daily' | 'weekly';
+
+export interface Song {
+  id: string;
+  title: string;
+  artist: string;
+  genre: Genre;
+  groupType: GroupType;
+  releaseDate: string | null; // YYYY-MM-DD
+}
+
+export interface ChartEntry {
+  chartDate: string; // YYYY-MM-DD
+  rank: number; // 1–20
+  songId: string;
+  chartType: ChartType;
+  source?: string;
+}
+
+export interface BroadcastWin {
+  songId: string;
+  broadcastDate: string; // YYYY-MM-DD
+  channel: 'KBS' | 'MBC' | 'SBS' | 'Mnet';
+}
+
+export interface ScoredSong {
+  song: Song;
+  totalScore: number;
+  rankComponent: number;
+  scoreExposure: number;
+  winCount: number;
+  bestRank: number | null;
+  temporalWeight: number;
+  genreMultiplier: number;
+  isGolden: boolean;
+  isSilver: boolean;
+}
+
+export interface Candidate {
+  rank: number;
+  artist: string;
+  title: string;
+  totalScore: number;
+  breakdown: {
+    rankComponent: number;
+    exposure: number;
+    wins: number | null;
+  };
+}
+
+export interface RecommendResult {
+  title: string;
+  mainSong: { artist: string; title: string };
+  candidates: Candidate[];
+  analytics: string[];
+  eraLabel: string;
+  staleMode: boolean;
+}
+
+export interface RecommendInput {
+  enlistmentDate: string; // YYYY-MM-DD
+  tone: Tone;
+}
