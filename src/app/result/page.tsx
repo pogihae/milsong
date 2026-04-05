@@ -38,8 +38,8 @@ export default async function ResultPage({ searchParams }: ResultPageProps) {
 
       <section className="relative z-10 mx-auto max-w-3xl space-y-10">
         <div className="space-y-4 text-center sm:text-left">
-          <p className="inline-block rounded-full bg-indigo-50 px-3 py-1 text-xs font-bold tracking-widest text-indigo-600 uppercase shadow-sm">
-            Recommendation
+          <p className="inline-block rounded-full bg-indigo-50 px-3 py-1 text-xs font-bold text-indigo-600 shadow-sm">
+            추천 결과
           </p>
           <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">{result.title}</h1>
           {result.staleMode ? (
