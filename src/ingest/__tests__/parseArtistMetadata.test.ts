@@ -11,6 +11,7 @@ describe('parseBugsArtistMetadata', () => {
 
     expect(parseBugsArtistMetadata(html)).toEqual({
       groupType: 'female_group',
+      nationality: null,
     });
   });
 });
