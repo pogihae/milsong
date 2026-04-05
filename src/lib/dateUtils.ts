@@ -23,15 +23,6 @@ export function isInRange(date: string, start: string, end: string): boolean {
 }
 
 /**
- * Returns true if the string is a valid YYYY-MM-DD calendar date.
- */
-export function isValidCalendarDate(value: string): boolean {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
-  const d = new Date(value);
-  return !isNaN(d.getTime()) && d.toISOString().slice(0, 10) === value;
-}
-
-/**
  * Returns the [start, end] window strings given a base date string and day offsets.
  * E.g. dateWindow('2023-03-15', -14, 30) → ['2023-03-01', '2023-04-14']
  */
