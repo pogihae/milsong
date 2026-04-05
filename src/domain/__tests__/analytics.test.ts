@@ -11,6 +11,7 @@ function makeScoredSong(overrides: Partial<ScoredSong> = {}): ScoredSong {
     groupType: 'male_group',
     releaseDate: '2023-03-15',
   };
+
   return {
     song,
     totalScore: 50,
@@ -27,104 +28,74 @@ function makeScoredSong(overrides: Partial<ScoredSong> = {}): ScoredSong {
 }
 
 describe('buildAnalytics', () => {
-  describe('Golden Window', () => {
-    it('includes golden sentence when isGolden is true', () => {
-      const lines = buildAnalytics(makeScoredSong({ isGolden: true }), 'nostalgic');
-      expect(lines.some((l) => l.includes('신곡'))).toBe(true);
-    });
-
-    it('does NOT include silver sentence when isGolden is true', () => {
-      const lines = buildAnalytics(makeScoredSong({ isGolden: true }), 'nostalgic');
-      expect(lines.some((l) => l.includes('롱런'))).toBe(false);
-    });
-
-    it('uses military tone for t_plus', () => {
-      const lines = buildAnalytics(makeScoredSong({ isGolden: true }), 't_plus');
-      expect(lines.some((l) => l.includes('귀하'))).toBe(true);
-    });
+  it('returns the nostalgic golden sentence', () => {
+    const lines = buildAnalytics(makeScoredSong({ isGolden: true }), 'nostalgic');
+    expect(lines).toContain(
+      'This song surged as a new release during the days around your enlistment.',
+    );
   });
 
-  describe('Silver Window', () => {
-    it('includes silver sentence when isSilver is true', () => {
-      const lines = buildAnalytics(makeScoredSong({ isSilver: true }), 'nostalgic');
-      expect(lines.some((l) => l.includes('롱런'))).toBe(true);
-    });
-
-    it('does NOT include golden sentence when only isSilver is true', () => {
-      const lines = buildAnalytics(makeScoredSong({ isSilver: true }), 'nostalgic');
-      expect(lines.some((l) => l.includes('신곡'))).toBe(false);
-    });
+  it('returns the military golden sentence for t_plus', () => {
+    const lines = buildAnalytics(makeScoredSong({ isGolden: true }), 't_plus');
+    expect(lines).toContain('This new release dominated the chart right around your enlistment.');
   });
 
-  describe('Genre bonus', () => {
-    it('includes genre sentence for female_group + dance', () => {
-      const lines = buildAnalytics(
-        makeScoredSong({
-          song: {
-            id: 'x',
-            title: 'T',
-            artist: 'A',
-            genre: 'dance',
-            groupType: 'female_group',
-            releaseDate: '2023-01-01',
-          },
-        }),
-        'nostalgic',
-      );
-      expect(lines.some((l) => l.includes('걸그룹'))).toBe(true);
-    });
-
-    it('does NOT include genre sentence for male_group + dance', () => {
-      const lines = buildAnalytics(
-        makeScoredSong({
-          song: {
-            id: 'x',
-            title: 'T',
-            artist: 'A',
-            genre: 'dance',
-            groupType: 'male_group',
-            releaseDate: '2023-01-01',
-          },
-        }),
-        'nostalgic',
-      );
-      expect(lines.some((l) => l.includes('걸그룹'))).toBe(false);
-    });
+  it('returns the silver sentence without the golden sentence', () => {
+    const lines = buildAnalytics(makeScoredSong({ isSilver: true }), 'nostalgic');
+    expect(lines).toContain(
+      'This was a long-running hit that stayed high on the chart before enlistment.',
+    );
+    expect(lines.some((line) => line.includes('new release'))).toBe(false);
   });
 
-  describe('Win count', () => {
-    it('includes win sentence when winCount > 0', () => {
-      const lines = buildAnalytics(makeScoredSong({ winCount: 8 }), 'nostalgic');
-      expect(lines.some((l) => l.includes('8관왕'))).toBe(true);
-    });
+  it('adds the genre sentence only for female group dance songs', () => {
+    const withGenre = buildAnalytics(
+      makeScoredSong({
+        song: {
+          id: 'x',
+          title: 'T',
+          artist: 'A',
+          genre: 'dance',
+          groupType: 'female_group',
+          releaseDate: '2023-01-01',
+        },
+      }),
+      'nostalgic',
+    );
 
-    it('omits win sentence when winCount is 0', () => {
-      const lines = buildAnalytics(makeScoredSong({ winCount: 0 }), 'nostalgic');
-      expect(lines.some((l) => l.includes('관왕'))).toBe(false);
-    });
+    const withoutGenre = buildAnalytics(
+      makeScoredSong({
+        song: {
+          id: 'x',
+          title: 'T',
+          artist: 'A',
+          genre: 'dance',
+          groupType: 'male_group',
+          releaseDate: '2023-01-01',
+        },
+      }),
+      'nostalgic',
+    );
+
+    expect(withGenre).toContain(
+      'Its girl-group dance sound matches the songs that often cycled through shared spaces.',
+    );
+    expect(withoutGenre.some((line) => line.includes('girl-group dance'))).toBe(false);
   });
 
-  describe('Exposure', () => {
-    it('includes exposure sentence when scoreExposure > 0', () => {
-      const lines = buildAnalytics(makeScoredSong({ scoreExposure: 42 }), 'nostalgic');
-      expect(lines.some((l) => l.includes('42일'))).toBe(true);
-    });
-
-    it('omits exposure sentence when scoreExposure is 0', () => {
-      const lines = buildAnalytics(makeScoredSong({ scoreExposure: 0 }), 'nostalgic');
-      expect(lines.some((l) => l.includes('TOP 10'))).toBe(false);
-    });
+  it('includes win and exposure lines when present', () => {
+    const lines = buildAnalytics(makeScoredSong({ winCount: 8, scoreExposure: 42 }), 'nostalgic');
+    expect(lines).toContain(
+      'It earned 8 music-show wins during the period that shaped your era.',
+    );
+    expect(lines).toContain(
+      'It remained in the Top 10 for 42 days during the first 100 days after enlistment.',
+    );
   });
 
-  describe('tone', () => {
-    it('t_plus uses 관물대 style phrasing', () => {
-      const lines = buildAnalytics(makeScoredSong({ isGolden: true }), 't_plus');
-      expect(lines.join(' ')).toContain('귀하');
-    });
-
-    it('nostalgic uses softer phrasing without 귀하', () => {
-      const lines = buildAnalytics(makeScoredSong({ isGolden: true }), 'nostalgic');
-      expect(lines.join(' ')).not.toContain('귀하');
-    });
+  it('omits win and exposure lines when absent', () => {
+    const lines = buildAnalytics(makeScoredSong({ winCount: 0, scoreExposure: 0 }), 'nostalgic');
+    expect(lines.some((line) => line.includes('music-show wins'))).toBe(false);
+    expect(lines.some((line) => line.includes('Top 10'))).toBe(false);
   });
 });
