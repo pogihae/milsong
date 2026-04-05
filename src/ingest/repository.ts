@@ -120,6 +120,7 @@ export async function upsertDailyChartSnapshot(
 
   const { error: songUpsertError } = await supabase.from('songs').upsert(songs, {
     onConflict: 'source,source_song_id',
+    defaultToNull: false,
   });
 
   if (songUpsertError) {
@@ -157,6 +158,7 @@ export async function upsertDailyChartSnapshot(
 
   const { error: chartUpsertError } = await supabase.from('charts').upsert(charts, {
     onConflict: 'source,chart_date,chart_type,rank',
+    defaultToNull: false,
   });
 
   if (chartUpsertError) {
