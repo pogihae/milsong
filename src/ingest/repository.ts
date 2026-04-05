@@ -106,6 +106,7 @@ export async function upsertDailyChartSnapshot(
 ): Promise<number> {
   const timestamp = nowIso();
   const songs: SongUpsertRecord[] = snapshot.rows.map((row) => ({
+    id: crypto.randomUUID(),
     title: row.title,
     artist: row.artist,
     genre: 'other',
@@ -161,6 +162,7 @@ export async function upsertDailyChartSnapshot(
     }
 
     return {
+      id: crypto.randomUUID(),
       chart_date: snapshot.chartDate,
       rank: row.rank,
       song_id: songId,

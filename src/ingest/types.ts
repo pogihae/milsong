@@ -21,6 +21,7 @@ export interface DailyChartSnapshot {
 }
 
 export interface SongUpsertRecord {
+  id: string;
   title: string;
   artist: string;
   genre: Genre;
@@ -34,6 +35,7 @@ export interface SongUpsertRecord {
 }
 
 export interface ChartUpsertRecord {
+  id: string;
   chart_date: string;
   rank: number;
   song_id: string;
