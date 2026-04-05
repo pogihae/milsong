@@ -1,0 +1,46 @@
+name: Bugs Chart Sync
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: backfill or incremental
+        required: true
+        default: incremental
+      from:
+        description: Optional start date (YYYY-MM-DD)
+        required: false
+      to:
+        description: Optional end date (YYYY-MM-DD)
+        required: false
+      days:
+        description: Optional number of days for incremental mode
+        required: false
+  schedule:
+    - cron: '20 18 * * *'
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Run Bugs incremental sync
+        if: github.event_name == 'schedule'
+        run: npm run ingest:bugs:sync
+
+      - name: Run manual sync
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          node -e "const args = []; const input = process.env.INPUT_MODE; args.push(`--mode=${input}`); if (process.env.INPUT_FROM) args.push(`--from=${process.env.INPUT_FROM}`); if (process.env.INPUT_TO) args.push(`--to=${process.env.INPUT_TO}`); if (process.env.INPUT_DAYS) args.push(`--days=${process.env.INPUT_DAYS}`); console.log(args.join(' ')); require('node:child_process').execFileSync('npm', ['run', 'ingest:bugs', '--', ...args], { stdio: 'inherit', shell: true });"

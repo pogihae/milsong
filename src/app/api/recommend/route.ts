@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { recommendSongs } from '@/application/recommendSongs';
 import type { RecommendInput, Tone } from '@/domain/types';
+import { isValidCalendarDate } from '@/lib/dateUtils';
 
 export async function POST(req: NextRequest) {
   let body: unknown;
@@ -12,7 +13,7 @@ export async function POST(req: NextRequest) {
 
   const { enlistment_date, tone } = body as Record<string, string>;
 
-  if (!enlistment_date || !/^\d{4}-\d{2}-\d{2}$/.test(enlistment_date)) {
+  if (!enlistment_date || !isValidCalendarDate(enlistment_date)) {
     return NextResponse.json(
       { error: 'enlistment_date must be a valid YYYY-MM-DD string.' },
       { status: 400 },

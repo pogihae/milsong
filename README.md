@@ -32,3 +32,11 @@ npm run dev
 - `npm run lint`
 - `npx tsc --noEmit`
 - `npm run build`
+
+## 차트 적재
+
+- 먼저 Supabase에 `supabase/migrations/0002_ingest_support.sql`까지 적용합니다.
+- 2019~2020 백필: `npm run ingest:bugs:backfill`
+- 최근 증분 동기화: `npm run ingest:bugs:sync`
+
+현재 1차 구현은 Bugs 일간 차트 기준으로 `songs`, `charts`, `sync_runs`, `sync_checkpoints`를 채웁니다. 장르, 그룹 타입, 발매일, 음방 1위는 후속 enrichment 단계에서 보강할 수 있게 `songs.source_*` 컬럼과 실행 이력을 함께 저장합니다.

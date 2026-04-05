@@ -30,3 +30,16 @@ export function dateWindow(baseDate: string, startOffset: number, endOffset: num
   const base = new Date(baseDate);
   return [toDateString(addDays(base, startOffset)), toDateString(addDays(base, endOffset))];
 }
+
+/**
+ * Returns true only when `str` is a well-formed YYYY-MM-DD string *and* represents
+ * an actual calendar date.  JavaScript's Date constructor silently rolls over
+ * invalid dates (e.g. "2023-02-30" becomes 2023-03-02), so we cross-check by
+ * re-formatting the parsed date and comparing it against the original string.
+ */
+export function isValidCalendarDate(str: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(str)) return false;
+  const parsed = new Date(str);
+  if (isNaN(parsed.getTime())) return false;
+  return toDateString(parsed) === str;
+}
