@@ -6,6 +6,7 @@ import {
   scoreExposure,
   totalScore,
   totalScoreStale,
+  chartDominance,
 } from '../scoring';
 import type { Song } from '../types';
 
@@ -22,8 +23,8 @@ function makeSong(overrides: Partial<Song> = {}): Song {
 }
 
 describe('genreMultiplier', () => {
-  it('returns 1.5 for female_group + dance', () => {
-    expect(genreMultiplier(makeSong({ groupType: 'female_group', genre: 'dance' }))).toBe(1.5);
+  it('returns 1.3 for female_group + dance', () => {
+    expect(genreMultiplier(makeSong({ groupType: 'female_group', genre: 'dance' }))).toBe(1.3);
   });
 
   it('returns 1.0 for female_group + ballad', () => {
@@ -59,8 +60,8 @@ describe('baseRank', () => {
 
 describe('rankComponent', () => {
   it('computes Base_Rank × Temporal_Weight × Genre_Multiplier', () => {
-    // bestRank=1 → baseRank=20, tw=1.5, gm=1.5 → 45
-    expect(rankComponent(1, 1.5, 1.5)).toBe(45);
+    // bestRank=1 → baseRank=20, tw=1.3, gm=1.3 → 20 * 1.3 * 1.3 = 33.8
+    expect(rankComponent(1, 1.3, 1.3)).toBeCloseTo(33.8, 5);
   });
 
   it('returns 0 when bestRank is null', () => {
@@ -73,37 +74,41 @@ describe('rankComponent', () => {
 });
 
 describe('scoreExposure', () => {
-  it('returns 100 for 100 days in top 10', () => {
-    expect(scoreExposure(100)).toBe(100);
-  });
-
-  it('returns 50 for 50 days', () => {
-    expect(scoreExposure(50)).toBe(50);
+  it('returns correctly stratified score (V2)', () => {
+    // top3=10 (15), top10=20 (20), top20=30 (12) -> 47
+    expect(scoreExposure(10, 20, 30)).toBe(47);
   });
 
   it('returns 0 for 0 days', () => {
-    expect(scoreExposure(0)).toBe(0);
+    expect(scoreExposure(0, 0, 0)).toBe(0);
+  });
+});
+
+describe('chartDominance', () => {
+  it('calculates dominance correctly based on rank thresholds', () => {
+    // rank1=5 (15), rank1to3=10 (15), rank4to10=20 (10) -> 40
+    expect(chartDominance(5, 10, 20)).toBe(40);
   });
 });
 
 describe('totalScore', () => {
-  it('sums rank_component + exposure + win_count × 5', () => {
-    expect(totalScore(30, 50, 4)).toBe(100);
+  it('sums rank_component + dominance + exposure + win_count × 8', () => {
+    expect(totalScore(30, 20, 50, 4)).toBe(132); // 30+20+50+(4*8) = 132
   });
 
-  it('returns only rank+exposure when winCount is 0', () => {
-    expect(totalScore(20, 30, 0)).toBe(50);
+  it('returns only components when winCount is 0', () => {
+    expect(totalScore(20, 10, 30, 0)).toBe(60); // 20+10+30+0 = 60
   });
 });
 
 describe('totalScoreStale', () => {
   it('uses default w_long of 1.0', () => {
-    // 1.0 × 30 + 20 + 2 × 5 = 60
-    expect(totalScoreStale(30, 20, 2)).toBe(60);
+    // 1.0 × 30 + 20 + 2 × 8 = 66
+    expect(totalScoreStale(30, 20, 2)).toBe(66);
   });
 
   it('applies custom w_long', () => {
-    // 2.0 × 30 + 20 + 2 × 5 = 90
-    expect(totalScoreStale(30, 20, 2, 2.0)).toBe(90);
+    // 2.0 × 30 + 20 + 2 × 8 = 96
+    expect(totalScoreStale(30, 20, 2, 2.0)).toBe(96);
   });
 });
