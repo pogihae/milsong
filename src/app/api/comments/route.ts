@@ -17,14 +17,15 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  let body: unknown;
+  let body: any;
   try {
     body = await req.json();
+    if (!body || typeof body !== 'object') throw new Error();
   } catch {
     return NextResponse.json({ error: '요청 형식이 올바르지 않습니다.' }, { status: 400 });
   }
 
-  const { songId, nickname, content } = body as Record<string, unknown>;
+  const { songId, nickname, content } = body;
 
   if (typeof songId !== 'string' || !songId.trim()) {
     return NextResponse.json({ error: 'songId가 필요합니다.' }, { status: 400 });
