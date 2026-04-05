@@ -118,16 +118,29 @@ export async function upsertDailyChartSnapshot(
     updated_at: timestamp,
   }));
 
-  const { error: songUpsertError } = await supabase.from('songs').upsert(songs, {
-    onConflict: 'source,source_song_id',
-    defaultToNull: false,
-  });
+  const sourceSongIds = snapshot.rows.map((row) => row.sourceSongId);
+  const { data: existingSongs, error: existingSongsError } = await supabase
+    .from('songs')
+    .select('source_song_id')
+    .eq('source', snapshot.source)
+    .in('source_song_id', sourceSongIds);
 
-  if (songUpsertError) {
-    throw new Error(`Failed to upsert songs for ${snapshot.chartDate}: ${songUpsertError.message}`);
+  if (existingSongsError) {
+    throw new Error(`Failed to load existing songs for ${snapshot.chartDate}: ${existingSongsError.message}`);
   }
 
-  const sourceSongIds = snapshot.rows.map((row) => row.sourceSongId);
+  const existingSourceIds = new Set((existingSongs ?? []).map((row) => row.source_song_id as string));
+  const songsToInsert = songs.filter((song) => !existingSourceIds.has(song.source_song_id));
+
+  const { error: songInsertError } =
+    songsToInsert.length > 0
+      ? await supabase.from('songs').insert(songsToInsert, { defaultToNull: false })
+      : { error: null };
+
+  if (songInsertError) {
+    throw new Error(`Failed to insert songs for ${snapshot.chartDate}: ${songInsertError.message}`);
+  }
+
   const { data: songRows, error: songQueryError } = await supabase
     .from('songs')
     .select('id, source_song_id')
@@ -156,13 +169,23 @@ export async function upsertDailyChartSnapshot(
     };
   });
 
-  const { error: chartUpsertError } = await supabase.from('charts').upsert(charts, {
-    onConflict: 'source,chart_date,chart_type,rank',
+  const { error: chartDeleteError } = await supabase
+    .from('charts')
+    .delete()
+    .eq('source', snapshot.source)
+    .eq('chart_date', snapshot.chartDate)
+    .eq('chart_type', snapshot.chartType);
+
+  if (chartDeleteError) {
+    throw new Error(`Failed to clear charts for ${snapshot.chartDate}: ${chartDeleteError.message}`);
+  }
+
+  const { error: chartInsertError } = await supabase.from('charts').insert(charts, {
     defaultToNull: false,
   });
 
-  if (chartUpsertError) {
-    throw new Error(`Failed to upsert charts for ${snapshot.chartDate}: ${chartUpsertError.message}`);
+  if (chartInsertError) {
+    throw new Error(`Failed to insert charts for ${snapshot.chartDate}: ${chartInsertError.message}`);
   }
 
   return charts.length;
