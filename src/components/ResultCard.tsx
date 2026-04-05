@@ -5,11 +5,16 @@ interface ResultCardProps {
 
 export default function ResultCard({ mainSong, eraLabel }: ResultCardProps) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-      <p className="text-lg font-semibold text-slate-950">
-        {mainSong.artist} - {mainSong.title}
+    <section className="glass-panel-active relative overflow-hidden rounded-[2rem] p-8 text-center sm:p-10">
+      <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500" />
+      <p className="mb-4 text-sm font-black uppercase tracking-[0.25em] text-indigo-600">Main Song</p>
+      <p className="text-3xl font-extrabold text-slate-900 sm:text-5xl text-balance drop-shadow-sm">
+        <span className="block text-xl text-slate-600 sm:text-2xl font-bold mb-2">{mainSong.artist}</span>
+        {mainSong.title}
       </p>
-      <p className="mt-2 text-slate-600">{eraLabel}</p>
-    </div>
+      <div className="mt-8 inline-flex items-center justify-center rounded-full bg-slate-100/80 px-4 py-1.5 text-sm font-medium text-slate-700 backdrop-blur-md">
+        {eraLabel}
+      </div>
+    </section>
   );
 }

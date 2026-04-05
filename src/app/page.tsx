@@ -2,54 +2,31 @@ import EnlistmentForm from '@/components/EnlistmentForm';
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top,#e0f2fe,transparent_45%),linear-gradient(180deg,#f8fafc_0%,#e2e8f0_100%)] px-6 py-16 text-slate-900">
-      <div className="mx-auto flex w-full max-w-5xl flex-col gap-10 lg:flex-row lg:items-center">
-        <section className="flex-1 space-y-6">
-          <p className="text-sm font-semibold uppercase tracking-[0.3em] text-sky-700">
-            Military Song Era Finder
-          </p>
-          <div className="space-y-4">
-            <h1 className="max-w-2xl text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl">
-              Find the song that defines your enlistment era
-            </h1>
-            <p className="max-w-2xl text-base leading-7 text-slate-700 sm:text-lg">
-              Use your enlistment date to weigh chart timing, early-service exposure, and music show
-              wins, then surface the song that best matches your military era.
-            </p>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-3">
-            <div className="rounded-2xl border border-white/70 bg-white/70 p-4 shadow-sm backdrop-blur">
-              <p className="text-sm font-medium text-slate-500">Golden Window</p>
-              <p className="mt-2 text-sm leading-6 text-slate-700">
-                Rewards songs that peaked from 14 days before enlistment through 30 days after.
-              </p>
-            </div>
-            <div className="rounded-2xl border border-white/70 bg-white/70 p-4 shadow-sm backdrop-blur">
-              <p className="text-sm font-medium text-slate-500">Exposure Score</p>
-              <p className="mt-2 text-sm leading-6 text-slate-700">
-                Measures how long a song stayed in the Top 10 during the first 100 service days.
-              </p>
-            </div>
-            <div className="rounded-2xl border border-white/70 bg-white/70 p-4 shadow-sm backdrop-blur">
-              <p className="text-sm font-medium text-slate-500">Era Label</p>
-              <p className="mt-2 text-sm leading-6 text-slate-700">
-                Turns the top recommendation into a reusable era label for the result card.
-              </p>
-            </div>
-          </div>
-        </section>
+    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-slate-50 px-6 py-16 text-slate-900 selection:bg-indigo-200">
+      {/* Dynamic Background Blobs */}
+      <div aria-hidden="true" className="absolute top-[-10%] left-[-10%] h-[500px] w-[500px] animate-float rounded-full bg-indigo-400/20 mix-blend-multiply blur-3xl filter" />
+      <div aria-hidden="true" className="absolute top-[20%] right-[-10%] h-[600px] w-[600px] animate-float-delayed rounded-full bg-pink-400/20 mix-blend-multiply blur-3xl filter" />
+      <div aria-hidden="true" className="absolute bottom-[-20%] left-[20%] h-[500px] w-[500px] animate-float rounded-full bg-sky-400/20 mix-blend-multiply blur-3xl filter" />
 
-        <section className="w-full max-w-xl rounded-[2rem] border border-white/80 bg-white p-8 shadow-[0_30px_80px_rgba(15,23,42,0.12)]">
-          <div className="mb-6 space-y-2">
-            <h2 className="text-2xl font-semibold text-slate-950">Get a recommendation</h2>
-            <p className="text-sm leading-6 text-slate-600">
-              Pick an enlistment date and tone to see the main song, candidate list, and scoring
-              rationale.
-            </p>
-          </div>
+      <section className="relative z-10 w-full max-w-3xl rounded-[2.5rem] p-8 sm:p-12 glass-panel">
+        <div className="space-y-4 text-center sm:text-left">
+          <p className="inline-block rounded-full bg-indigo-50 px-3 py-1 text-xs font-bold tracking-widest text-indigo-600 uppercase shadow-sm">
+            Milsong
+          </p>
+          <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl">
+            <span className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 bg-clip-text text-transparent">입대일</span>로 찾는 
+            <br className="sm:hidden" /> 나의 입대곡
+          </h1>
+          <p className="mx-auto max-w-2xl text-base leading-relaxed text-slate-600 sm:mx-0 sm:text-lg">
+            그때 그 시절, 부대에서 가장 많이 들려왔던 노래는 무엇일까요?
+            입대일과 선호하는 문체를 입력하면 가장 그럴듯한 입대곡 Top 3를 추천해 드립니다.
+          </p>
+        </div>
+
+        <div className="mt-12">
           <EnlistmentForm />
-        </section>
-      </div>
+        </div>
+      </section>
     </main>
   );
 }
