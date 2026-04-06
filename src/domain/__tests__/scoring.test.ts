@@ -74,8 +74,8 @@ describe('rankComponent', () => {
 });
 
 describe('scoreExposure', () => {
-  it('returns correctly stratified score (V2 Tightened)', () => {
-    // top3=10 (12), top10=20 (20), top20=30 (3) -> 35
+  it('returns correctly stratified score', () => {
+    // top3=10 (10*1.2=12), top10=20 (20*1.0=20), top20=30 (30*0.1=3) → 35/100*100 = 35
     expect(scoreExposure(10, 20, 30)).toBe(35);
   });
 
@@ -86,30 +86,34 @@ describe('scoreExposure', () => {
 
 describe('chartDominance', () => {
   it('calculates dominance correctly based on rank thresholds', () => {
-    // rank1=5 (15), rank1to3=10 (15), rank4to10=20 (10) -> 40
+    // rank1=5 (15), rank1to3=10 (15), rank4to10=20 (10) → 40
     expect(chartDominance(5, 10, 20)).toBe(40);
+  });
+
+  it('returns 0 for all zeros', () => {
+    expect(chartDominance(0, 0, 0)).toBe(0);
   });
 });
 
 describe('totalScore', () => {
-  it('sums rank_component + dominance + exposure + win_count × 8', () => {
-    // 30+20+35+(4*8) = 117
-    expect(totalScore(30, 20, 35, 4)).toBe(117); 
+  it('sums rank_component + dominance + exposure', () => {
+    // 30 + 20 + 35 = 85
+    expect(totalScore(30, 20, 35)).toBe(85);
   });
 
-  it('returns only components when winCount is 0', () => {
-    expect(totalScore(20, 10, 30, 0)).toBe(60); // 20+10+30+0 = 60
+  it('returns only rank+dominance when exposure is 0', () => {
+    expect(totalScore(20, 10, 0)).toBe(30);
   });
 });
 
 describe('totalScoreStale', () => {
   it('uses default w_long of 1.0', () => {
-    // 1.0 × 30 + 20 + 2 × 8 = 66
-    expect(totalScoreStale(30, 20, 2)).toBe(66);
+    // 1.0 × 30 + 20 + 10 = 60
+    expect(totalScoreStale(30, 20, 10)).toBe(60);
   });
 
   it('applies custom w_long', () => {
-    // 2.0 × 30 + 20 + 2 × 8 = 96
-    expect(totalScoreStale(30, 20, 2, 2.0)).toBe(96);
+    // 2.0 × 30 + 20 + 10 = 90
+    expect(totalScoreStale(30, 20, 10, 2.0)).toBe(90);
   });
 });

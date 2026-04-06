@@ -54,7 +54,7 @@ export default function CandidateList({ candidates, artUrls }: CandidateListProp
                 </p>
                 <p className="mt-0.5 text-[11px] tabular-nums text-white/35">
                   순위 {c.breakdown.rankComponent.toFixed(0)} · 노출 {c.breakdown.exposure.toFixed(0)}
-                  {c.breakdown.wins !== null ? ` · 음방 ${c.breakdown.wins}회` : ''}
+                  {c.breakdown.dominance > 0 ? ` · 지배력 ${c.breakdown.dominance.toFixed(0)}` : ''}
                 </p>
               </div>
             </div>
@@ -62,7 +62,7 @@ export default function CandidateList({ candidates, artUrls }: CandidateListProp
             {/* 점수 — 모바일 전용 두 번째 줄 */}
             <p className="mt-2 pl-[68px] text-[11px] tabular-nums text-white/30 sm:hidden">
               총점 {c.totalScore.toFixed(1)} · 순위 {c.breakdown.rankComponent.toFixed(0)} · 노출 {c.breakdown.exposure.toFixed(0)}
-              {c.breakdown.wins !== null ? ` · 음방 ${c.breakdown.wins}회` : ''}
+              {c.breakdown.dominance > 0 ? ` · 지배력 ${c.breakdown.dominance.toFixed(0)}` : ''}
             </p>
           </li>
         ))}
