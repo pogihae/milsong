@@ -11,9 +11,9 @@ describe('parseBugsAlbumMetadata', () => {
       </table>
     `;
 
-    expect(parseBugsAlbumMetadata(html)).toEqual({
-      genre: 'dance',
-      releaseDate: '2019-12-23',
-    });
+    const result = parseBugsAlbumMetadata(html);
+    expect(result.genre).toBe('dance');
+    expect(result.releaseDate).toBe('2019-12-23');
+    expect(result.albumArtUrl).toBeNull();
   });
 });

@@ -11,8 +11,6 @@ export function buildAnalytics(scored: ScoredSong): string[] {
     lines.push('입대 직전·직후에 신곡으로 차트에 강하게 노출된 곡입니다.');
   } else if (scored.isSilver) {
     lines.push('입대 전부터 이미 차트 상위권을 유지하던 롱런 곡입니다.');
-  } else if (scored.isBronze) {
-    lines.push('입대 전부터 꾸준히 사랑받던 스테디셀러 곡입니다.');
   }
 
   if (scored.song.groupType === 'female_group' && scored.song.genre === 'dance') {

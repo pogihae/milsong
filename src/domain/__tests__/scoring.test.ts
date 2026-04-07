@@ -107,13 +107,12 @@ describe('totalScore', () => {
 });
 
 describe('totalScoreStale', () => {
-  it('uses default w_long of 1.0', () => {
-    // 1.0 × 30 + 20 + 10 = 60
+  it('sums recencyScore + exposure + dominance', () => {
+    // 30 + 20 + 10 = 60
     expect(totalScoreStale(30, 20, 10)).toBe(60);
   });
 
-  it('applies custom w_long', () => {
-    // 2.0 × 30 + 20 + 10 = 90
-    expect(totalScoreStale(30, 20, 10, 2.0)).toBe(90);
+  it('returns 0 for all zeros', () => {
+    expect(totalScoreStale(0, 0, 0)).toBe(0);
   });
 });

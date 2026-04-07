@@ -10,6 +10,7 @@ export interface Song {
   groupType: GroupType;
   releaseDate: string | null; // YYYY-MM-DD
   sourceArtistId?: string | null;
+  albumArtUrl?: string | null;
 }
 
 export interface ChartEntry {
@@ -31,15 +32,14 @@ export interface ScoredSong {
   totalScore: number;
   rankComponent: number;
   scoreExposure: number;
-  chartDominance: number;    // computed score: rank1*3 + rank1to3*1.5 + rank4to10*0.5
-  daysTop3: number;          // days in TOP 3 within exposure window, for analytics
-  daysRank4to10: number;     // days in rank 4–10 within exposure window, for analytics
+  chartDominance: number;
+  daysTop3: number;
+  daysRank4to10: number;
   bestRank: number | null;
   temporalWeight: number;
   genreMultiplier: number;
   isGolden: boolean;
   isSilver: boolean;
-  isBronze: boolean;
 }
 
 export interface Candidate {
@@ -48,6 +48,7 @@ export interface Candidate {
   artist: string;
   title: string;
   totalScore: number;
+  albumArtUrl?: string | null;
   breakdown: {
     rankComponent: number;
     dominance: number;
@@ -75,8 +76,6 @@ export interface RecommendResult {
 export interface ScoringParams {
   goldenWeight?: number;
   silverWeight?: number;
-  bronzeWeight?: number;
-  genreDanceMultiplier?: number;
 }
 
 export interface RecommendInput {
