@@ -30,46 +30,43 @@ export function rankComponent(
 }
 
 /**
- * Score_exposure_v2 (Tightened)
- * Stratified by rank: TOP 3, TOP 10 (excluding 3), and TOP 20 (excluding 10).
- * Multipliers lowered to prevent exposure score from becoming too broad.
+ * Score_exposure — stratified by rank depth, applied to window [D-7, D+45].
+ * TOP 3, rank 4–10 (daysTop10), and rank 11–20 (daysTop20) weighted differently.
+ * Multipliers keep exposure from dominating when chart presence is broad but shallow.
  */
 export function scoreExposure(daysTop3: number, daysTop10: number, daysTop20: number): number {
   return ((daysTop3 * 1.2 + daysTop10 * 1.0 + daysTop20 * 0.1) / 100) * 100;
 }
 
 /**
- * Chart Dominance = sum of days in different top tiers across [D-90, D+100]
+ * Chart Dominance — weighted rank-tier score in Golden Window [D-14, D+30].
+ * rank1*3 + rank1to3*1.5 + rank4to10*0.5
  */
 export function chartDominance(daysRank1: number, daysRank1to3: number, daysRank4to10: number): number {
   return daysRank1 * 3 + daysRank1to3 * 1.5 + daysRank4to10 * 0.5;
 }
 
 /**
- * Total_Score = Rank_Component + Chart_Dominance + Score_exposure + (Win_Count × 8)
+ * Total_Score = Rank_Component + Chart_Dominance + Score_exposure
+ * Win_Count removed: chart dominance replaces external broadcast wins data.
  */
 export function totalScore(
   rc: number,
   dominance: number,
   exposure: number,
-  winCount: number,
-  params?: ScoringParams,
 ): number {
-  const winMultiplier = params?.winCountMultiplier ?? 8;
-  return rc + dominance + exposure + winCount * winMultiplier;
+  return rc + dominance + exposure;
 }
 
 /**
  * Stale-chart formula (§6.4):
- * Total_Score_stale = w_long × days_top20_in_[D-60, D] + Score_exposure + Win_Count × 8
+ * Total_Score_stale = w_long × days_top20_in_[D-60, D] + Score_exposure + Chart_Dominance
  */
 export function totalScoreStale(
   daysTop20InStalePeriod: number,
   exposure: number,
-  winCount: number,
+  dominance: number,
   wLong: number = 1.0,
-  params?: ScoringParams,
 ): number {
-  const winMultiplier = params?.winCountMultiplier ?? 8;
-  return wLong * daysTop20InStalePeriod + exposure + winCount * winMultiplier;
+  return wLong * daysTop20InStalePeriod + exposure + dominance;
 }

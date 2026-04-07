@@ -17,12 +17,15 @@ function makeScoredSong(overrides: Partial<ScoredSong> = {}): ScoredSong {
     totalScore: 50,
     rankComponent: 30,
     scoreExposure: 20,
-    winCount: 0,
+    chartDominance: 0,
+    daysTop3: 0,
+    daysRank4to10: 0,
     bestRank: 5,
     temporalWeight: 1.5,
     genreMultiplier: 1.0,
     isGolden: false,
     isSilver: false,
+    isBronze: false,
     ...overrides,
   };
 }
@@ -76,19 +79,17 @@ describe('buildAnalytics', () => {
     expect(withoutGenre.some((line) => line.includes('걸그룹 댄스'))).toBe(false);
   });
 
-  it('includes win and exposure lines when present', () => {
-    const lines = buildAnalytics(makeScoredSong({ winCount: 8, scoreExposure: 42 }));
-    expect(lines).toContain(
-      '이 곡은 해당 시기 음악 방송에서 8회 1위를 차지했습니다.',
+  it('includes dominance and exposure lines when present', () => {
+    const lines = buildAnalytics(
+      makeScoredSong({ chartDominance: 40, scoreExposure: 42, daysTop3: 20, daysRank4to10: 15 }),
     );
-    expect(lines).toContain(
-      '입대 후 첫 100일 동안 TOP 10에 42일간 머물렀습니다.',
-    );
+    expect(lines).toContain('입대 전후 핵심 기간 동안 차트 1위권을 강하게 유지했습니다.');
+    expect(lines).toContain('입대 전후 핵심 기간 동안 TOP 10에 35일간 머물렀습니다.');
   });
 
-  it('omits win and exposure lines when absent', () => {
-    const lines = buildAnalytics(makeScoredSong({ winCount: 0, scoreExposure: 0 }));
-    expect(lines.some((line) => line.includes('음방'))).toBe(false);
+  it('omits dominance and exposure lines when absent', () => {
+    const lines = buildAnalytics(makeScoredSong({ chartDominance: 0, scoreExposure: 0 }));
+    expect(lines.some((line) => line.includes('1위권'))).toBe(false);
     expect(lines.some((line) => line.includes('TOP 10'))).toBe(false);
   });
 });

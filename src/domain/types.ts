@@ -31,14 +31,15 @@ export interface ScoredSong {
   totalScore: number;
   rankComponent: number;
   scoreExposure: number;
-  winCount: number;
+  chartDominance: number;    // computed score: rank1*3 + rank1to3*1.5 + rank4to10*0.5
+  daysTop3: number;          // days in TOP 3 within exposure window, for analytics
+  daysRank4to10: number;     // days in rank 4–10 within exposure window, for analytics
   bestRank: number | null;
   temporalWeight: number;
   genreMultiplier: number;
   isGolden: boolean;
   isSilver: boolean;
   isBronze: boolean;
-  chartDominance: number;
 }
 
 export interface Candidate {
@@ -51,7 +52,6 @@ export interface Candidate {
     rankComponent: number;
     dominance: number;
     exposure: number;
-    wins: number | null;
   };
 }
 
@@ -77,7 +77,6 @@ export interface ScoringParams {
   silverWeight?: number;
   bronzeWeight?: number;
   genreDanceMultiplier?: number;
-  winCountMultiplier?: number;
 }
 
 export interface RecommendInput {
