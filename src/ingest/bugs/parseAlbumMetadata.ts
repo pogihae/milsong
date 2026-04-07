@@ -31,6 +31,18 @@ function normalizeReleaseDate(rawValue: string): string | null {
 export interface BugsAlbumMetadata {
   genre: Genre;
   releaseDate: string | null;
+  albumArtUrl: string | null;
+}
+
+function extractAlbumArtUrl(html: string, $: ReturnType<typeof load>): string | null {
+  const ogImage = $('meta[property="og:image"]').attr('content');
+  if (ogImage && ogImage.startsWith('http')) return ogImage;
+
+  const imgSrc = $('.albumImgInfo img, .album_jacket img').first().attr('src');
+  if (imgSrc && imgSrc.startsWith('http')) return imgSrc;
+
+  const match = html.match(/https:\/\/image\.bugscdn\.com\/[^\s"'<>]+\.(?:jpg|webp|png)/);
+  return match ? match[0] : null;
 }
 
 export function parseBugsAlbumMetadata(html: string): BugsAlbumMetadata {
@@ -57,5 +69,6 @@ export function parseBugsAlbumMetadata(html: string): BugsAlbumMetadata {
   return {
     genre: mapGenre(rawGenre),
     releaseDate: normalizeReleaseDate(rawReleaseDate),
+    albumArtUrl: extractAlbumArtUrl(html, $),
   };
 }

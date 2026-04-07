@@ -1,12 +1,10 @@
-import type { Song, ScoringParams } from './types';
+import type { Song } from './types';
 
 /**
  * Genre_Multiplier: 1.3 for female group dance songs, 1.0 for all others.
  */
-export function genreMultiplier(song: Song, params?: ScoringParams): number {
-  return song.groupType === 'female_group' && song.genre === 'dance'
-    ? (params?.genreDanceMultiplier ?? 1.3)
-    : 1.0;
+export function genreMultiplier(song: Song): number {
+  return song.groupType === 'female_group' && song.genre === 'dance' ? 1.3 : 1.0;
 }
 
 /**
@@ -35,7 +33,7 @@ export function rankComponent(
  * Multipliers keep exposure from dominating when chart presence is broad but shallow.
  */
 export function scoreExposure(daysTop3: number, daysTop10: number, daysTop20: number): number {
-  return ((daysTop3 * 1.2 + daysTop10 * 1.0 + daysTop20 * 0.1) / 100) * 100;
+  return daysTop3 * 1.2 + daysTop10 * 1.0 + daysTop20 * 0.1;
 }
 
 /**
@@ -60,13 +58,15 @@ export function totalScore(
 
 /**
  * Stale-chart formula (§6.4):
- * Total_Score_stale = w_long × days_top20_in_[D-60, D] + Score_exposure + Chart_Dominance
+ * Total_Score_stale = recencyScore + Score_exposure + Chart_Dominance
+ *
+ * recencyScore = max(0, 365 - daysBetweenReleaseDateAndD)
+ * This rewards songs released closer to D over long-running steady sellers.
  */
 export function totalScoreStale(
-  daysTop20InStalePeriod: number,
+  recencyScore: number,
   exposure: number,
   dominance: number,
-  wLong: number = 1.0,
 ): number {
-  return wLong * daysTop20InStalePeriod + exposure + dominance;
+  return recencyScore + exposure + dominance;
 }

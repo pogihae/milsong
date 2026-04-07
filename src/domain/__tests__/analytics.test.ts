@@ -25,7 +25,6 @@ function makeScoredSong(overrides: Partial<ScoredSong> = {}): ScoredSong {
     genreMultiplier: 1.0,
     isGolden: false,
     isSilver: false,
-    isBronze: false,
     ...overrides,
   };
 }

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { isGoldenWindow, isSilverWindow, isBronzeWindow, temporalWeight } from '../windows';
+import { isGoldenWindow, isSilverWindow, temporalWeight } from '../windows';
 
 describe('isGoldenWindow', () => {
   const D = '2023-03-15';
@@ -28,8 +28,13 @@ describe('isGoldenWindow', () => {
 describe('isSilverWindow', () => {
   const D = '2023-03-15';
 
-  it('returns true when P < D-14 and daysInTop20 >= 15', () => {
-    expect(isSilverWindow(D, '2023-01-01', 15)).toBe(true);
+  it('returns true when P is within [D-90, D-14) and daysInTop20 >= 10', () => {
+    // P = '2023-01-01' is between D-90 (2022-12-15) and D-14 (2023-03-01)
+    expect(isSilverWindow(D, '2023-01-01', 10)).toBe(true);
+  });
+
+  it('returns true when daysInTop20 is exactly 10', () => {
+    expect(isSilverWindow(D, '2023-01-15', 10)).toBe(true);
   });
 
   it('returns false when P is within D-14 (golden range)', () => {
@@ -37,60 +42,47 @@ describe('isSilverWindow', () => {
     expect(isSilverWindow(D, '2023-03-05', 20)).toBe(false);
   });
 
-  it('returns false when daysInTop20 < 15', () => {
-    expect(isSilverWindow(D, '2023-01-01', 14)).toBe(false);
+  it('returns false when daysInTop20 < 10', () => {
+    expect(isSilverWindow(D, '2023-01-01', 9)).toBe(false);
   });
 
   it('returns false when P is exactly D-14 (golden boundary)', () => {
     expect(isSilverWindow(D, '2023-03-01', 15)).toBe(false);
   });
 
-  it('returns true when daysInTop20 is exactly 15', () => {
-    expect(isSilverWindow(D, '2023-01-01', 15)).toBe(true);
-  });
-});
-
-describe('isBronzeWindow', () => {
-  const D = '2023-03-15';
-
-  it('returns true when P < D-60 and daysInTop20 >= 20', () => {
-    expect(isBronzeWindow(D, '2022-12-01', 25)).toBe(true);
+  it('returns false when P is older than D-90', () => {
+    // P = '2022-12-01' is before D-90 (2022-12-15)
+    expect(isSilverWindow(D, '2022-12-01', 15)).toBe(false);
   });
 
-  it('returns false when daysInTop20 < 20', () => {
-    expect(isBronzeWindow(D, '2022-12-01', 19)).toBe(false);
-  });
-
-  it('returns false when P is exactly D-60', () => {
-    // '2023-01-14' is D-60 for '2023-03-15'
-    expect(isBronzeWindow(D, '2023-01-14', 20)).toBe(false);
+  it('returns true when P is exactly at D-90', () => {
+    // D-90 of 2023-03-15 is 2022-12-15
+    expect(isSilverWindow(D, '2022-12-15', 10)).toBe(true);
   });
 });
 
 describe('temporalWeight', () => {
   it('returns 1.3 for golden', () => {
-    expect(temporalWeight(true, false, false)).toBe(1.3);
+    expect(temporalWeight(true, false)).toBe(1.3);
   });
 
   it('returns 1.0 for silver', () => {
-    expect(temporalWeight(false, true, false)).toBe(1.0);
+    expect(temporalWeight(false, true)).toBe(1.0);
   });
 
-  it('returns 0.6 for bronze', () => {
-    expect(temporalWeight(false, false, true)).toBe(0.6);
-  });
-
-  it('returns 0 for none', () => {
-    expect(temporalWeight(false, false, false)).toBe(0);
+  it('returns 0 for neither golden nor silver', () => {
+    expect(temporalWeight(false, false)).toBe(0);
   });
 
   it('returns 1.3 when both golden and silver are true (golden takes priority)', () => {
-    expect(temporalWeight(true, true, false)).toBe(1.3);
+    expect(temporalWeight(true, true)).toBe(1.3);
   });
 
-  it('applies override parameters if provided', () => {
-    expect(temporalWeight(true, false, false, { goldenWeight: 2.0 })).toBe(2.0);
-    expect(temporalWeight(false, true, false, { silverWeight: 1.5 })).toBe(1.5);
-    expect(temporalWeight(false, false, true, { bronzeWeight: 0.8 })).toBe(0.8);
+  it('applies override goldenWeight if provided', () => {
+    expect(temporalWeight(true, false, { goldenWeight: 2.0 })).toBe(2.0);
+  });
+
+  it('applies override silverWeight if provided', () => {
+    expect(temporalWeight(false, true, { silverWeight: 1.5 })).toBe(1.5);
   });
 });

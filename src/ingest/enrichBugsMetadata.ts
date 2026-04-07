@@ -13,6 +13,7 @@ interface SongRow {
 interface AlbumRow {
   genre: Genre;
   releaseDate: string | null;
+  albumArtUrl: string | null;
 }
 
 export interface EnrichSummary {
@@ -45,7 +46,7 @@ async function loadSongsNeedingEnrichment(limit?: number): Promise<SongRow[]> {
     .from('songs')
     .select('id, source_album_id, source_artist_id')
     .eq('source', 'bugs')
-    .or('release_date.is.null,genre.eq.other,group_type.eq.other')
+    .or('release_date.is.null,genre.eq.other,group_type.eq.other,album_art_url.is.null')
     .order('id', { ascending: true });
 
   if (typeof limit === 'number') {
@@ -75,12 +76,14 @@ export async function enrichBugsMetadata(limit?: number): Promise<EnrichSummary>
     let genre: Genre = 'other';
     let releaseDate: string | null = null;
     let groupType: GroupType = 'other';
+    let albumArtUrl: string | null = null;
 
     if (song.source_album_id) {
       const cached = albumCache.get(song.source_album_id);
       if (cached) {
         genre = cached.genre;
         releaseDate = cached.releaseDate;
+        albumArtUrl = cached.albumArtUrl;
       } else {
         const html = await retry(
           () => fetchBugsHtml(`https://music.bugs.co.kr/album/${song.source_album_id}`),
@@ -90,6 +93,7 @@ export async function enrichBugsMetadata(limit?: number): Promise<EnrichSummary>
         albumCache.set(song.source_album_id, metadata);
         genre = metadata.genre;
         releaseDate = metadata.releaseDate;
+        albumArtUrl = metadata.albumArtUrl;
         albumRequests += 1;
       }
     }
@@ -117,6 +121,7 @@ export async function enrichBugsMetadata(limit?: number): Promise<EnrichSummary>
           genre,
           release_date: releaseDate,
           group_type: groupType,
+          album_art_url: albumArtUrl,
           updated_at: new Date().toISOString(),
         })
         .eq('id', song.id);

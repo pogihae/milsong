@@ -4,12 +4,10 @@ import { isEligibleKoreanSong } from '@/domain/isEligibleKoreanSong';
 import { buildEraLabel } from '@/domain/eraLabel';
 import { genreMultiplier, rankComponent, scoreExposure, totalScore, totalScoreStale, chartDominance } from '@/domain/scoring';
 import type { ChartEntry, RecommendInput, RecommendResult, ScoredSong } from '@/domain/types';
-import { isGoldenWindow, isSilverWindow, isBronzeWindow, temporalWeight } from '@/domain/windows';
+import { isGoldenWindow, isSilverWindow, temporalWeight } from '@/domain/windows';
 import { getChartEntries } from '@/infrastructure/supabase/chartRepository';
 import { getSongsByIds } from '@/infrastructure/supabase/songRepository';
 import { dateWindow, isInRange } from '@/lib/dateUtils';
-
-const STALE_W_LONG = 1.0;
 
 function computeExposureAndBestRank(
   entries: ChartEntry[],
@@ -20,20 +18,25 @@ function computeExposureAndBestRank(
   dominanceStart: string,
   dominanceEnd: string,
 ) {
-  // Exposure: tiered by rank depth within [D-7, D+45]
-  const exposureEntries = entries.filter((e) => isInRange(e.chartDate, exposureStart, exposureEnd));
-  const daysTop3 = exposureEntries.filter((e) => e.rank <= 3).length;
-  const daysTop10 = exposureEntries.filter((e) => e.rank > 3 && e.rank <= 10).length;
-  const daysTop20 = exposureEntries.filter((e) => e.rank > 10 && e.rank <= 20).length;
+  let daysTop3 = 0, daysTop10 = 0, daysTop20 = 0;
+  let daysRank1 = 0, daysRank1to3 = 0, daysRank4to10 = 0;
+  let bestRank: number | null = null;
 
-  // Dominance: rank-weighted score within [D-14, D+30] (Golden Window)
-  const dominanceEntries = entries.filter((e) => isInRange(e.chartDate, dominanceStart, dominanceEnd));
-  const daysRank1 = dominanceEntries.filter((e) => e.rank === 1).length;
-  const daysRank1to3 = dominanceEntries.filter((e) => e.rank >= 2 && e.rank <= 3).length;
-  const daysRank4to10 = dominanceEntries.filter((e) => e.rank >= 4 && e.rank <= 10).length;
-
-  const goldenEntries = entries.filter((e) => isInRange(e.chartDate, goldenStart, goldenEnd));
-  const bestRank = goldenEntries.length > 0 ? Math.min(...goldenEntries.map((e) => e.rank)) : null;
+  for (const e of entries) {
+    if (isInRange(e.chartDate, exposureStart, exposureEnd)) {
+      if (e.rank <= 3) daysTop3++;
+      else if (e.rank <= 10) daysTop10++;
+      else if (e.rank <= 20) daysTop20++;
+    }
+    if (isInRange(e.chartDate, dominanceStart, dominanceEnd)) {
+      if (e.rank === 1) daysRank1++;
+      else if (e.rank <= 3) daysRank1to3++;
+      else if (e.rank <= 10) daysRank4to10++;
+    }
+    if (isInRange(e.chartDate, goldenStart, goldenEnd)) {
+      if (bestRank === null || e.rank < bestRank) bestRank = e.rank;
+    }
+  }
 
   return {
     daysTop3,
@@ -48,19 +51,18 @@ export async function recommendSongs(input: RecommendInput): Promise<RecommendRe
   const { enlistmentDate: D, scoringParams } = input;
 
   const [goldenStart, goldenEnd] = dateWindow(D, -14, 30);
-  const [silverStart, silverEnd] = dateWindow(D, -60, -1);
-  const [bronzeStart, bronzeEnd] = dateWindow(D, -90, -1);
+  // Silver: song must still be charting in [D-30, D-1] right before enlistment
+  const [silverStart, silverEnd] = dateWindow(D, -30, -1);
   // Exposure focused on [D-7, D+45] — the period most strongly linked to 이병 memory
   const [exposureStart, exposureEnd] = dateWindow(D, -7, 45);
-  // Dominance window = Golden Window [D-14, D+30] — focused on the period around enlistment
+  // Dominance window = Golden Window [D-14, D+30]
   const [dominanceStart, dominanceEnd] = [goldenStart, goldenEnd];
-  const [staleStart, staleEnd] = dateWindow(D, -60, 0);
-  // Fetch from D-90 to cover Bronze window; end at D+45 (our narrowed exposure end)
+  // Fetch from D-90 to cover Silver lower bound; end at D+45
   const [candidateWindowStart, candidateWindowEnd] = dateWindow(D, -90, 45);
 
   const chartEntries = await getChartEntries(candidateWindowStart, candidateWindowEnd, 'daily');
 
-  // Group entries by songId once to avoid O(n×m) repeated scans per song in scoring loops
+  // Group entries by songId once
   const entriesBySong = new Map<string, ChartEntry[]>();
   for (const e of chartEntries) {
     const list = entriesBySong.get(e.songId);
@@ -82,21 +84,18 @@ export async function recommendSongs(input: RecommendInput): Promise<RecommendRe
 
     const entries = entriesBySong.get(songId)!;
 
+    // Silver: released within [D-90, D-14), still charting ≥10 days in [D-30, D-1]
     const daysTop20Silver = entries.filter(
       (e) => isInRange(e.chartDate, silverStart, silverEnd) && e.rank <= 20,
-    ).length;
-    const daysTop20Bronze = entries.filter(
-      (e) => isInRange(e.chartDate, bronzeStart, bronzeEnd) && e.rank <= 20,
     ).length;
 
     const golden = song.releaseDate ? isGoldenWindow(D, song.releaseDate) : false;
     const silver = song.releaseDate ? isSilverWindow(D, song.releaseDate, daysTop20Silver) : false;
-    const bronze = song.releaseDate ? isBronzeWindow(D, song.releaseDate, daysTop20Bronze) : false;
 
-    const tw = temporalWeight(golden, silver, bronze, scoringParams);
+    const tw = temporalWeight(golden, silver, scoringParams);
     if (tw === 0) continue;
 
-    const gm = genreMultiplier(song, scoringParams);
+    const gm = genreMultiplier(song);
     const { daysTop3, daysRank4to10, exposure, dominance, bestRank } = computeExposureAndBestRank(
       entries, exposureStart, exposureEnd, goldenStart, goldenEnd, dominanceStart, dominanceEnd,
     );
@@ -116,7 +115,6 @@ export async function recommendSongs(input: RecommendInput): Promise<RecommendRe
       genreMultiplier: gm,
       isGolden: golden,
       isSilver: silver,
-      isBronze: bronze,
     });
   }
 
@@ -127,24 +125,24 @@ export async function recommendSongs(input: RecommendInput): Promise<RecommendRe
   let staleMode = false;
   if (!hasGoldenTop10 && scoredSongs.length === 0) {
     staleMode = true;
-    const staleSongIds = songIds.filter((songId) =>
-      entriesBySong.get(songId)!.some((e) => isInRange(e.chartDate, staleStart, staleEnd)),
-    );
+    const dMillis = new Date(D).getTime();
 
-    for (const songId of staleSongIds) {
+    for (const songId of songIds) {
       const song = songMap.get(songId);
       if (!song) continue;
       if (!eligibleSongIds.has(songId)) continue;
 
       const entries = entriesBySong.get(songId)!;
-
-      const daysTop20Stale = entries.filter(
-        (e) => isInRange(e.chartDate, staleStart, staleEnd) && e.rank <= 20,
-      ).length;
       const { daysTop3, daysRank4to10, exposure, dominance, bestRank } = computeExposureAndBestRank(
         entries, exposureStart, exposureEnd, goldenStart, goldenEnd, dominanceStart, dominanceEnd,
       );
-      const ts = totalScoreStale(daysTop20Stale, exposure, dominance, STALE_W_LONG);
+
+      // Recency score: songs released closer to D score higher (max 365 for same-day)
+      const pMillis = song.releaseDate ? new Date(song.releaseDate).getTime() : 0;
+      const daysBefore = song.releaseDate ? Math.max(0, (dMillis - pMillis) / 86400000) : 999;
+      const recencyScore = Math.max(0, 365 - daysBefore);
+
+      const ts = totalScoreStale(recencyScore, exposure, dominance);
 
       scoredSongs.push({
         song,
@@ -159,7 +157,6 @@ export async function recommendSongs(input: RecommendInput): Promise<RecommendRe
         genreMultiplier: 1.0,
         isGolden: false,
         isSilver: false,
-        isBronze: false,
       });
     }
   }
@@ -199,6 +196,7 @@ export async function recommendSongs(input: RecommendInput): Promise<RecommendRe
     artist: s.song.artist,
     title: s.song.title,
     totalScore: s.totalScore,
+    albumArtUrl: s.song.albumArtUrl ?? null,
     breakdown: {
       rankComponent: s.rankComponent,
       dominance: s.chartDominance,
